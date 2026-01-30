@@ -1,0 +1,48 @@
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;1,400&family=Quicksand:wght@300;400;500;600&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+.scrollbar-hide::-webkit-scrollbar { display: none; }
+.scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
+
+body {
+  margin: 0;
+  height: 100vh;
+  /* Default to Mobile Background */
+  background-image: url('/bg-mobile.jpg'); 
+  background-size: cover;
+  background-position: center;
+  background-attachment: fixed;
+  font-family: 'Quicksand', sans-serif;
+  color: #2c2c2c; /* Dark text for better contrast on light glass */
+}
+
+/* --- DESKTOP SWITCH --- */
+/* If screen is wider than 768px (Tablets/Laptops) */
+@media (min-width: 768px) {
+  body {
+    background-image: url('/bg-desktop.jpg'); 
+  }
+}
+
+h1, h2, h3, .dreamy-text {
+  font-family: 'Playfair Display', serif;
+}
+
+/* Lighter, Icier Glass Effect */
+.glass-panel {
+  background: rgba(255, 255, 255, 0.25); /* Much lighter */
+  backdrop-filter: blur(12px); /* Softer blur */
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  box-shadow: 0 8px 32px rgba(31, 38, 135, 0.1);
+}
+
+.selected-date {
+  background: #fbcfe8; /* Pastel Pink */
+  color: #831843; /* Dark Pink Text */
+  font-weight: bold;
+  box-shadow: 0 2px 10px rgba(251, 207, 232, 0.5);
+}
