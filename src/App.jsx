@@ -183,12 +183,28 @@ export default function App() {
   const [editTitle, setEditTitle] = useState('')
   const [editCals, setEditCals] = useState('')
   const [editProt, setEditProt] = useState('')
+  const [isLoading, setIsLoading] = useState(true)
 
   // Handle redirect result on page load
   useEffect(() => {
-    getRedirectResult(auth).catch((error) => {
-      console.error("Redirect error:", error)
-    })
+    const handleRedirect = async () => {
+      try {
+        const result = await getRedirectResult(auth)
+        if (result) {
+          // Successfully signed in via redirect
+          console.log("Redirect sign-in successful")
+        }
+      } catch (error) {
+        console.error("Redirect error:", error)
+        // Don't show alert for normal page loads
+        if (error.code !== 'auth/popup-closed-by-user') {
+          console.error("Auth error code:", error.code)
+        }
+      } finally {
+        setIsLoading(false)
+      }
+    }
+    handleRedirect()
   }, [])
 
   // Auth & Data Listener
@@ -196,6 +212,7 @@ export default function App() {
     let unsubscribeSnapshot = null
     const unsubscribeAuth = onAuthStateChanged(auth, (currentUser) => {
       setUser(currentUser)
+      setIsLoading(false)
       if (currentUser) {
         // Query only by uid to avoid needing a composite index
         const q = query(
@@ -226,23 +243,20 @@ export default function App() {
 
   const handleLogin = async () => {
     try {
-      // Check if mobile device
-      const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent)
-      
-      if (isMobile) {
-        // Use redirect for mobile (more reliable)
-        await signInWithRedirect(auth, googleProvider)
-      } else {
-        // Use popup for desktop
-        await signInWithPopup(auth, googleProvider)
-      }
+      // Use popup for all devices - more reliable than redirect
+      await signInWithPopup(auth, googleProvider)
     } catch (error) {
       console.error("Login error:", error)
-      // Fallback to redirect if popup fails
-      try {
-        await signInWithRedirect(auth, googleProvider)
-      } catch (redirectError) {
-        alert("Login failed: " + redirectError.message)
+      
+      // If popup was blocked or failed, try redirect as fallback
+      if (error.code === 'auth/popup-blocked' || error.code === 'auth/popup-closed-by-user') {
+        try {
+          await signInWithRedirect(auth, googleProvider)
+        } catch (redirectError) {
+          alert("Login failed. Please enable popups or try again.")
+        }
+      } else {
+        alert("Login failed: " + error.message)
       }
     }
   }
@@ -319,7 +333,16 @@ export default function App() {
 
   return (
     <div className="min-h-dvh flex flex-col items-center justify-center p-4">
-      {!user ? (
+      {isLoading ? (
+        <motion.div 
+          initial={{ opacity: 0 }} 
+          animate={{ opacity: 1 }} 
+          className="glass-panel p-12 rounded-[40px] text-center max-w-sm w-full shadow-2xl"
+        >
+          <h1 className="text-5xl italic mb-4 text-stone-800 tracking-tight">SkyCal</h1>
+          <p className="text-stone-500 text-sm">Loading...</p>
+        </motion.div>
+      ) : !user ? (
         <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="glass-panel p-12 rounded-[40px] text-center max-w-sm w-full shadow-2xl">
           <h1 className="text-5xl italic mb-2 text-stone-800 tracking-tight">SkyCal</h1>
           <p className="text-stone-600 mb-8 font-light">Your daily calorie journal.</p>
