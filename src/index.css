@@ -7,39 +7,39 @@
 .scrollbar-hide::-webkit-scrollbar { display: none; }
 .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
 
-html {
-  height: 100%;
-  background-color: #e8d5c4; /* Matches the image tone */
-}
-
-body {
+html, body, #root {
   margin: 0;
-  min-height: 100%;
-  min-height: 100dvh; /* Dynamic viewport height for mobile */
-  /* Default to Mobile Background */
-  background-image: url('/bg-mobile.jpeg'); 
-  background-size: cover;
-  background-position: center;
-  background-attachment: fixed;
-  background-color: #e8d5c4; /* Fallback that matches image */
-  font-family: 'Quicksand', sans-serif;
-  color: #2c2c2c; /* Dark text for better contrast on light glass */
-}
-
-/* Prevent white flash on overscroll */
-html, body {
+  padding: 0;
+  height: 100%;
+  min-height: 100dvh;
+  min-height: -webkit-fill-available;
   overscroll-behavior: none;
 }
 
-#root {
-  min-height: 100%;
-  min-height: 100dvh;
+/* Fixed background that covers entire screen including browser chrome */
+body::before {
+  content: '';
+  position: fixed;
+  top: -100px;
+  left: -100px;
+  right: -100px;
+  bottom: -100px;
+  z-index: -1;
+  background-image: url('/bg-mobile.jpeg');
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+}
+
+body {
+  font-family: 'Quicksand', sans-serif;
+  color: #2c2c2c;
 }
 
 /* --- DESKTOP SWITCH --- */
 /* If screen is wider than 768px (Tablets/Laptops) */
 @media (min-width: 768px) {
-  body {
+  body::before {
     background-image: url('/bg-desktop.jpeg'); 
   }
 }

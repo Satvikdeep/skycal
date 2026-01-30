@@ -1,15 +1,10 @@
 import { useState, useEffect } from 'react'
 import { auth, googleProvider, db } from './firebase'
 import { signInWithPopup, signOut, onAuthStateChanged } from 'firebase/auth'
-import { collection, addDoc, query, where, orderBy, onSnapshot, serverTimestamp } from 'firebase/firestore'
+import { collection, addDoc, query, where, onSnapshot, serverTimestamp } from 'firebase/firestore'
 import { motion, AnimatePresence } from 'framer-motion'
-import { LogOut, ChevronLeft, ChevronRight, Plus, Calendar as CalIcon, X } from 'lucide-react'
+import { LogOut, ChevronLeft, ChevronRight, Plus } from 'lucide-react'
 import { format, addMonths, subMonths, startOfMonth, endOfMonth, startOfWeek, endOfWeek, isSameMonth, isSameDay, addDays } from 'date-fns'
-
-// --- 1. LOCAL FILE PATHS ---
-// These look for files inside the "public" folder
-const MOBILE_BG = "/bg-mobile.jpeg"
-const DESKTOP_BG = "/bg-desktop.jpg"
 
 export default function App() {
   const [user, setUser] = useState(null)
@@ -21,24 +16,6 @@ export default function App() {
   const [title, setTitle] = useState('')
   const [cals, setCals] = useState('')
   const [prot, setProt] = useState('')
-
-  // Default to mobile bg initially
-  const [bgImage, setBgImage] = useState(MOBILE_BG)
-
-  // --- 2. WINDOW RESIZE LOGIC ---
-  useEffect(() => {
-    const handleResize = () => {
-      // If screen is wider than 768px, use desktop image, else mobile
-      if (window.innerWidth > 768) {
-        setBgImage(DESKTOP_BG)
-      } else {
-        setBgImage(MOBILE_BG)
-      }
-    }
-    handleResize() // Check immediately on load
-    window.addEventListener('resize', handleResize)
-    return () => window.removeEventListener('resize', handleResize)
-  }, [])
 
   // Auth & Data Listener
   useEffect(() => {
@@ -73,7 +50,14 @@ export default function App() {
     }
   }, [])
 
-  const handleLogin = async () => await signInWithPopup(auth, googleProvider)
+  const handleLogin = async () => {
+    try {
+      await signInWithPopup(auth, googleProvider)
+    } catch (error) {
+      console.error("Login error:", error)
+      alert("Login failed: " + error.message)
+    }
+  }
 
   const addEntry = async () => {
     if (!title || !cals) return
@@ -121,16 +105,7 @@ export default function App() {
   }
 
   return (
-    <div 
-      className="min-h-screen flex flex-col items-center justify-center p-4 transition-all duration-1000"
-      style={{ 
-        backgroundImage: `url(${bgImage})`,
-        backgroundSize: 'cover',
-        backgroundPosition: 'center',
-        backgroundAttachment: 'fixed',
-        backgroundColor: '#fce7f3' // Pink fallback if image fails
-      }}
-    >
+    <div className="min-h-dvh flex flex-col items-center justify-center p-4">
       {!user ? (
         <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="glass-panel p-12 rounded-[40px] text-center max-w-sm w-full shadow-2xl">
           <h1 className="text-5xl italic mb-2 text-stone-800 tracking-tight">SkyCal</h1>
