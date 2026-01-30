@@ -76,7 +76,7 @@ h1, h2, h3, .dreamy-text {
 
 .input-with-cursor .cursor-hint {
   position: absolute;
-  left: 10.2em; /* Position after 'Tandoori Momos...' text */
+  left: 9.9em; /* Position after 'Tandoori Momos...' text */
   top: 50%;
   transform: translateY(-50%);
   width: 2px;
@@ -85,4 +85,13 @@ h1, h2, h3, .dreamy-text {
   animation: cursor-blink 1s ease-in-out infinite;
   pointer-events: none;
   border-radius: 1px;
+}
+
+/* iOS-style swipe actions */
+.swipe-action-delete {
+  background: linear-gradient(90deg, #ef4444 0%, #dc2626 100%);
+}
+
+.swipe-action-edit {
+  background: linear-gradient(270deg, #f97316 0%, #ea580c 100%);
 }
