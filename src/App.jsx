@@ -1,10 +1,170 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { auth, googleProvider, db } from './firebase'
 import { signInWithPopup, signInWithRedirect, getRedirectResult, signOut, onAuthStateChanged } from 'firebase/auth'
-import { collection, addDoc, query, where, onSnapshot, serverTimestamp } from 'firebase/firestore'
-import { motion, AnimatePresence } from 'framer-motion'
-import { LogOut, ChevronLeft, ChevronRight, Plus } from 'lucide-react'
+import { collection, addDoc, doc, deleteDoc, updateDoc, query, where, onSnapshot, serverTimestamp } from 'firebase/firestore'
+import { motion, AnimatePresence, useMotionValue, useTransform, animate } from 'framer-motion'
+import { LogOut, ChevronLeft, ChevronRight, Plus, Trash2, Pencil, Check, X } from 'lucide-react'
 import { format, addMonths, subMonths, startOfMonth, endOfMonth, startOfWeek, endOfWeek, isSameMonth, isSameDay, addDays } from 'date-fns'
+
+// iOS-style Swipeable Entry Component
+function SwipeableEntry({ entry, onDelete, onEdit, isEditing, editTitle, setEditTitle, editCals, setEditCals, editProt, setEditProt, onSave, onCancel }) {
+  const x = useMotionValue(0)
+  const [isDeleting, setIsDeleting] = useState(false)
+  const [swipeState, setSwipeState] = useState('closed') // 'closed', 'delete-revealed', 'edit-revealed'
+  
+  const ACTION_WIDTH = 80
+  const FULL_DELETE_THRESHOLD = 200
+  
+  const leftActionOpacity = useTransform(x, [-ACTION_WIDTH, -40, 0], [1, 0.5, 0])
+  const rightActionOpacity = useTransform(x, [0, 40, ACTION_WIDTH], [0, 0.5, 1])
+  const leftActionScale = useTransform(x, [-ACTION_WIDTH, -40, 0], [1, 0.8, 0.5])
+  const rightActionScale = useTransform(x, [0, 40, ACTION_WIDTH], [0.5, 0.8, 1])
+  
+  const handleDragEnd = (_, info) => {
+    const currentX = x.get()
+    
+    // Full swipe right = instant delete
+    if (info.offset.x > FULL_DELETE_THRESHOLD) {
+      setIsDeleting(true)
+      animate(x, 400, { type: "spring", stiffness: 300, damping: 30 })
+      setTimeout(() => onDelete(), 200)
+      return
+    }
+    
+    // Partial swipe right = reveal delete button
+    if (info.offset.x > 40) {
+      animate(x, ACTION_WIDTH, { type: "spring", stiffness: 400, damping: 35 })
+      setSwipeState('delete-revealed')
+      return
+    }
+    
+    // Partial swipe left = reveal edit button
+    if (info.offset.x < -40) {
+      animate(x, -ACTION_WIDTH, { type: "spring", stiffness: 400, damping: 35 })
+      setSwipeState('edit-revealed')
+      return
+    }
+    
+    // Small movement = snap back
+    animate(x, 0, { type: "spring", stiffness: 400, damping: 35 })
+    setSwipeState('closed')
+  }
+  
+  const handleDeleteClick = () => {
+    setIsDeleting(true)
+    animate(x, 400, { type: "spring", stiffness: 300, damping: 30 })
+    setTimeout(() => onDelete(), 200)
+  }
+  
+  const handleEditClick = () => {
+    animate(x, 0, { type: "spring", stiffness: 400, damping: 35 })
+    setSwipeState('closed')
+    onEdit()
+  }
+  
+  const handleContentClick = () => {
+    if (swipeState !== 'closed') {
+      animate(x, 0, { type: "spring", stiffness: 400, damping: 35 })
+      setSwipeState('closed')
+    }
+  }
+
+  if (isEditing) {
+    return (
+      <motion.div 
+        initial={{ opacity: 0, scale: 0.95 }}
+        animate={{ opacity: 1, scale: 1 }}
+        className="p-4 bg-white/40 backdrop-blur-sm rounded-2xl border border-white/40 space-y-3"
+      >
+        <input 
+          value={editTitle} 
+          onChange={e => setEditTitle(e.target.value)}
+          className="w-full bg-white/50 rounded-2xl px-4 py-2 text-stone-800 font-serif italic text-lg focus:outline-none border border-white/20 placeholder-stone-400"
+          placeholder="Food name..."
+        />
+        <div className="flex gap-2">
+          <div className="flex-1 bg-white/50 rounded-2xl px-4 py-2 border border-white/20">
+            <label className="text-[9px] uppercase text-stone-400 block mb-1">Calories</label>
+            <input 
+              type="number"
+              value={editCals} 
+              onChange={e => setEditCals(e.target.value)}
+              className="w-full bg-transparent focus:outline-none font-bold text-stone-700"
+            />
+          </div>
+          <div className="flex-1 bg-white/50 rounded-2xl px-4 py-2 border border-white/20">
+            <label className="text-[9px] uppercase text-stone-400 block mb-1">Protein</label>
+            <input 
+              type="number"
+              value={editProt} 
+              onChange={e => setEditProt(e.target.value)}
+              className="w-full bg-transparent focus:outline-none font-bold text-stone-700"
+            />
+          </div>
+        </div>
+        <div className="flex gap-2">
+          <button 
+            onClick={onSave}
+            className="flex-1 bg-stone-800 text-white rounded-2xl py-2.5 flex items-center justify-center gap-2 active:scale-95 transition shadow-lg hover:bg-black"
+          >
+            <Check size={18} /> Save
+          </button>
+          <button 
+            onClick={onCancel}
+            className="flex-1 bg-white/50 text-stone-600 rounded-2xl py-2.5 flex items-center justify-center gap-2 active:scale-95 transition border border-white/20 hover:bg-white/70"
+          >
+            <X size={18} /> Cancel
+          </button>
+        </div>
+      </motion.div>
+    )
+  }
+
+  return (
+    <div className="relative overflow-hidden rounded-2xl">
+      {/* Delete action (right swipe - appears on left) */}
+      <motion.div 
+        className="absolute inset-y-0 left-0 w-20 bg-red-500 flex items-center justify-center rounded-l-2xl cursor-pointer active:bg-red-600"
+        style={{ opacity: rightActionOpacity }}
+        onClick={handleDeleteClick}
+      >
+        <motion.div style={{ scale: rightActionScale }} className="flex flex-col items-center gap-1">
+          <Trash2 className="text-white" size={22} />
+          <span className="text-white text-[10px] font-medium">Delete</span>
+        </motion.div>
+      </motion.div>
+      
+      {/* Edit action (left swipe - appears on right) */}
+      <motion.div 
+        className="absolute inset-y-0 right-0 w-20 bg-orange-500 flex items-center justify-center rounded-r-2xl cursor-pointer active:bg-orange-600"
+        style={{ opacity: leftActionOpacity }}
+        onClick={handleEditClick}
+      >
+        <motion.div style={{ scale: leftActionScale }} className="flex flex-col items-center gap-1">
+          <Pencil className="text-white" size={22} />
+          <span className="text-white text-[10px] font-medium">Edit</span>
+        </motion.div>
+      </motion.div>
+      
+      {/* Main content */}
+      <motion.div
+        drag="x"
+        dragConstraints={{ left: -ACTION_WIDTH, right: ACTION_WIDTH }}
+        dragElastic={0.1}
+        onDragEnd={handleDragEnd}
+        onClick={handleContentClick}
+        style={{ x }}
+        className={`flex justify-between items-center p-4 bg-white/40 rounded-2xl border border-white/20 cursor-grab active:cursor-grabbing relative z-10 ${isDeleting ? 'opacity-0' : ''}`}
+      >
+        <div>
+          <p className="text-base font-medium text-stone-800">{entry.title}</p>
+          <p className="text-xs text-stone-500">{entry.protein}g protein</p>
+        </div>
+        <p className="font-bold text-stone-600">{entry.calories}</p>
+      </motion.div>
+    </div>
+  )
+}
 
 export default function App() {
   const [user, setUser] = useState(null)
@@ -17,6 +177,12 @@ export default function App() {
   const [cals, setCals] = useState('')
   const [prot, setProt] = useState('')
   const [titleFocused, setTitleFocused] = useState(false)
+  
+  // Edit mode state
+  const [editingEntry, setEditingEntry] = useState(null)
+  const [editTitle, setEditTitle] = useState('')
+  const [editCals, setEditCals] = useState('')
+  const [editProt, setEditProt] = useState('')
 
   // Handle redirect result on page load
   useEffect(() => {
@@ -88,6 +254,31 @@ export default function App() {
       createdAt: serverTimestamp(), dateString: format(new Date(), 'yyyy-MM-dd')
     })
     setTitle(''); setCals(''); setProt(''); setView('dashboard')
+  }
+
+  const deleteEntry = async (entryId) => {
+    await deleteDoc(doc(db, "logs", entryId))
+  }
+
+  const startEdit = (entry) => {
+    setEditingEntry(entry.id)
+    setEditTitle(entry.title)
+    setEditCals(entry.calories.toString())
+    setEditProt(entry.protein.toString())
+  }
+
+  const saveEdit = async () => {
+    if (!editingEntry || !editTitle || !editCals) return
+    await updateDoc(doc(db, "logs", editingEntry), {
+      title: editTitle,
+      calories: Number(editCals),
+      protein: Number(editProt) || 0
+    })
+    setEditingEntry(null)
+  }
+
+  const cancelEdit = () => {
+    setEditingEntry(null)
   }
 
   const selectedDateStr = format(selectedDate, 'yyyy-MM-dd')
@@ -191,13 +382,21 @@ export default function App() {
                        <p className="text-center text-stone-400 text-sm py-8 italic font-light">Your plate is empty.</p>
                      ) : (
                        logsForSelectedDate.map(entry => (
-                         <div key={entry.id} className="flex justify-between items-center p-4 bg-white/40 rounded-2xl hover:bg-white/60 transition border border-white/20">
-                           <div>
-                             <p className="text-base font-medium text-stone-800">{entry.title}</p>
-                             <p className="text-xs text-stone-500">{entry.protein}g protein</p>
-                           </div>
-                           <p className="font-bold text-stone-600">{entry.calories}</p>
-                         </div>
+                         <SwipeableEntry 
+                           key={entry.id} 
+                           entry={entry} 
+                           onDelete={() => deleteEntry(entry.id)}
+                           onEdit={() => startEdit(entry)}
+                           isEditing={editingEntry === entry.id}
+                           editTitle={editTitle}
+                           setEditTitle={setEditTitle}
+                           editCals={editCals}
+                           setEditCals={setEditCals}
+                           editProt={editProt}
+                           setEditProt={setEditProt}
+                           onSave={saveEdit}
+                           onCancel={cancelEdit}
+                         />
                        ))
                      )}
                   </div>
