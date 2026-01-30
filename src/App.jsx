@@ -105,7 +105,7 @@ export default function App() {
   }
 
   return (
-    <div className="min-h-dvh flex flex-col items-center justify-center p-4">
+    <div className="min-h-full flex flex-col items-center justify-center p-4">
       {!user ? (
         <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="glass-panel p-12 rounded-[40px] text-center max-w-sm w-full shadow-2xl">
           <h1 className="text-5xl italic mb-2 text-stone-800 tracking-tight">SkyCal</h1>

@@ -1,17 +1,22 @@
 <!doctype html>
-<html lang="en">
+<html lang="en" style="height: 100%;">
   <head>
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/vite.svg" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-    <meta name="theme-color" content="#f0d4d4" media="(prefers-color-scheme: light)" />
-    <meta name="theme-color" content="#f0d4d4" media="(prefers-color-scheme: dark)" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+    <meta name="theme-color" content="#f5e6dc" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <title>skycal</title>
+    <style>
+      /* Prevent any white background showing */
+      html, body { 
+        background: linear-gradient(to bottom, #f5d6d0 0%, #c9d4b8 100%);
+      }
+    </style>
   </head>
-  <body>
-    <div id="root"></div>
+  <body style="height: 100%; margin: 0;">
+    <div id="root" style="height: 100%;"></div>
     <script type="module" src="/src/main.jsx"></script>
   </body>
 </html>
