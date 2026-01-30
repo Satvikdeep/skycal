@@ -7,23 +7,40 @@
 .scrollbar-hide::-webkit-scrollbar { display: none; }
 .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
 
+html {
+  height: 100%;
+  background-color: #e8d5c4; /* Matches the image tone */
+}
+
 body {
   margin: 0;
-  height: 100vh;
+  min-height: 100%;
+  min-height: 100dvh; /* Dynamic viewport height for mobile */
   /* Default to Mobile Background */
-  background-image: url('/bg-mobile.jpg'); 
+  background-image: url('/bg-mobile.jpeg'); 
   background-size: cover;
   background-position: center;
   background-attachment: fixed;
+  background-color: #e8d5c4; /* Fallback that matches image */
   font-family: 'Quicksand', sans-serif;
   color: #2c2c2c; /* Dark text for better contrast on light glass */
+}
+
+/* Prevent white flash on overscroll */
+html, body {
+  overscroll-behavior: none;
+}
+
+#root {
+  min-height: 100%;
+  min-height: 100dvh;
 }
 
 /* --- DESKTOP SWITCH --- */
 /* If screen is wider than 768px (Tablets/Laptops) */
 @media (min-width: 768px) {
   body {
-    background-image: url('/bg-desktop.jpg'); 
+    background-image: url('/bg-desktop.jpeg'); 
   }
 }
 
