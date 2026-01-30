@@ -76,7 +76,7 @@ h1, h2, h3, .dreamy-text {
 
 .input-with-cursor .cursor-hint {
   position: absolute;
-  left: 9.9em; /* Position after 'Tandoori Momos...' text */
+  left: 10.2em; /* Position after 'Tandoori Momos...' text */
   top: 50%;
   transform: translateY(-50%);
   width: 2px;

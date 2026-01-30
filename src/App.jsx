@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { auth, googleProvider, db } from './firebase'
-import { signInWithPopup, signOut, onAuthStateChanged } from 'firebase/auth'
+import { signInWithPopup, signInWithRedirect, getRedirectResult, signOut, onAuthStateChanged } from 'firebase/auth'
 import { collection, addDoc, query, where, onSnapshot, serverTimestamp } from 'firebase/firestore'
 import { motion, AnimatePresence } from 'framer-motion'
 import { LogOut, ChevronLeft, ChevronRight, Plus } from 'lucide-react'
@@ -17,6 +17,13 @@ export default function App() {
   const [cals, setCals] = useState('')
   const [prot, setProt] = useState('')
   const [titleFocused, setTitleFocused] = useState(false)
+
+  // Handle redirect result on page load
+  useEffect(() => {
+    getRedirectResult(auth).catch((error) => {
+      console.error("Redirect error:", error)
+    })
+  }, [])
 
   // Auth & Data Listener
   useEffect(() => {
@@ -53,10 +60,24 @@ export default function App() {
 
   const handleLogin = async () => {
     try {
-      await signInWithPopup(auth, googleProvider)
+      // Check if mobile device
+      const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent)
+      
+      if (isMobile) {
+        // Use redirect for mobile (more reliable)
+        await signInWithRedirect(auth, googleProvider)
+      } else {
+        // Use popup for desktop
+        await signInWithPopup(auth, googleProvider)
+      }
     } catch (error) {
       console.error("Login error:", error)
-      alert("Login failed: " + error.message)
+      // Fallback to redirect if popup fails
+      try {
+        await signInWithRedirect(auth, googleProvider)
+      } catch (redirectError) {
+        alert("Login failed: " + redirectError.message)
+      }
     }
   }
 
