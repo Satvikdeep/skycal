@@ -10,28 +10,25 @@
 html, body, #root {
   margin: 0;
   padding: 0;
-  width: 100%;
   height: 100%;
-  overflow: hidden;
+  min-height: 100dvh;
+  min-height: -webkit-fill-available;
+  overscroll-behavior: none;
 }
 
-/* Fixed background that covers entire screen */
+/* Fixed background that covers entire screen including browser chrome */
 body::before {
   content: '';
   position: fixed;
-  inset: 0;
+  top: -100px;
+  left: -100px;
+  right: -100px;
+  bottom: -100px;
   z-index: -1;
   background-image: url('/bg-mobile.jpeg');
   background-size: cover;
   background-position: center;
   background-repeat: no-repeat;
-}
-
-#root {
-  width: 100%;
-  height: 100%;
-  overflow-y: auto;
-  -webkit-overflow-scrolling: touch;
 }
 
 body {
@@ -43,7 +40,7 @@ body {
 /* If screen is wider than 768px (Tablets/Laptops) */
 @media (min-width: 768px) {
   body::before {
-    background-image: url('/bg-desktop.jpeg'); 
+    background-image: url('/bg-desktop.jpg'); 
   }
 }
 
@@ -65,4 +62,27 @@ h1, h2, h3, .dreamy-text {
   color: #831843; /* Dark Pink Text */
   font-weight: bold;
   box-shadow: 0 2px 10px rgba(251, 207, 232, 0.5);
+}
+
+/* Blinking cursor hint for empty unfocused inputs */
+@keyframes cursor-blink {
+  0%, 100% { opacity: 0.7; }
+  50% { opacity: 0; }
+}
+
+.input-with-cursor {
+  position: relative;
+}
+
+.input-with-cursor .cursor-hint {
+  position: absolute;
+  left: 9.9em; /* Position after 'Tandoori Momos...' text */
+  top: 50%;
+  transform: translateY(-50%);
+  width: 2px;
+  height: 1.4em;
+  background-color: #a8a29e;
+  animation: cursor-blink 1s ease-in-out infinite;
+  pointer-events: none;
+  border-radius: 1px;
 }

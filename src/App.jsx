@@ -16,6 +16,7 @@ export default function App() {
   const [title, setTitle] = useState('')
   const [cals, setCals] = useState('')
   const [prot, setProt] = useState('')
+  const [titleFocused, setTitleFocused] = useState(false)
 
   // Auth & Data Listener
   useEffect(() => {
@@ -105,12 +106,13 @@ export default function App() {
   }
 
   return (
-    <div className="min-h-full flex flex-col items-center justify-center p-4">
+    <div className="min-h-dvh flex flex-col items-center justify-center p-4">
       {!user ? (
         <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="glass-panel p-12 rounded-[40px] text-center max-w-sm w-full shadow-2xl">
           <h1 className="text-5xl italic mb-2 text-stone-800 tracking-tight">SkyCal</h1>
-          <p className="text-stone-600 mb-8 font-light">Your daily nutrition journal.</p>
+          <p className="text-stone-600 mb-8 font-light">Your daily calorie journal.</p>
           <button onClick={handleLogin} className="w-full py-3 bg-stone-800 text-white rounded-2xl font-medium hover:bg-stone-700 transition">Enter Journal</button>
+          <p className="text-stone-450 text-xs mt-6 font-light">~ made with love by satvik ~</p>
         </motion.div>
       ) : (
         <motion.div layout className="glass-panel w-full max-w-md h-[85vh] rounded-[40px] flex flex-col overflow-hidden relative shadow-2xl backdrop-blur-xl bg-white/40 border border-white/60">
@@ -136,7 +138,17 @@ export default function App() {
                 <motion.div key="dash" initial={{opacity: 0}} animate={{opacity: 1}} exit={{opacity: 0}} className="space-y-6">
                   
                   <div className="bg-white/40 p-6 rounded-3xl backdrop-blur-sm border border-white/40 shadow-sm">
-                    <input value={title} onChange={e => setTitle(e.target.value)} placeholder="Morning coffee..." className="w-full bg-transparent text-xl placeholder-stone-400 text-stone-800 focus:outline-none mb-6 font-serif italic" />
+                    <div className="input-with-cursor relative mb-6">
+                      {!title && !titleFocused && <span className="cursor-hint"></span>}
+                      <input 
+                        value={title} 
+                        onChange={e => setTitle(e.target.value)} 
+                        onFocus={() => setTitleFocused(true)}
+                        onBlur={() => setTitleFocused(false)}
+                        placeholder="Tandoori Momos..." 
+                        className="w-full bg-transparent text-xl placeholder-stone-400 text-stone-800 focus:outline-none font-serif italic" 
+                      />
+                    </div>
                     <div className="flex gap-3">
                       <div className="flex-1 bg-white/50 rounded-2xl px-4 py-2 border border-white/20">
                         <label className="text-[9px] uppercase text-stone-400 block mb-1">Calories</label>
@@ -153,7 +165,7 @@ export default function App() {
                   </div>
 
                   <div className="space-y-2">
-                     <h3 className="text-lg font-serif italic text-stone-600 pl-2">Meals</h3>
+                     <h3 className="text-lg font-serif italic text-stone-600 pl-2">Meal Logs</h3>
                      {logsForSelectedDate.length === 0 ? (
                        <p className="text-center text-stone-400 text-sm py-8 italic font-light">Your plate is empty.</p>
                      ) : (
