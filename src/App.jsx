@@ -198,20 +198,25 @@ export default function App() {
   const [editCals, setEditCals] = useState('')
   const [editProt, setEditProt] = useState('')
   const [isLoading, setIsLoading] = useState(true)
-  const [authReady, setAuthReady] = useState(false)
 
   // Single unified auth initialization - handles both redirect and state
   useEffect(() => {
     let unsubscribeSnapshot = null
     let isMounted = true
+    let loadingCleared = false
     
-    // Safety timeout - if auth doesn't respond in 5 seconds, show the app anyway
-    const safetyTimeout = setTimeout(() => {
-      if (isMounted && isLoading) {
-        console.log("Auth timeout - showing app")
+    const clearLoading = () => {
+      if (isMounted && !loadingCleared) {
+        loadingCleared = true
         setIsLoading(false)
       }
-    }, 5000)
+    }
+    
+    // Safety timeout - if auth doesn't respond in 4 seconds, show the app anyway
+    const safetyTimeout = setTimeout(() => {
+      console.log("Auth timeout - forcing app display")
+      clearLoading()
+    }, 4000)
     
     const initAuth = async () => {
       // First, check for any pending redirect result
@@ -226,11 +231,6 @@ export default function App() {
           console.error("Redirect check:", error.code)
         }
       }
-      
-      // Mark auth as ready to proceed
-      if (isMounted) {
-        setAuthReady(true)
-      }
     }
     
     // Start the redirect check
@@ -241,8 +241,7 @@ export default function App() {
       if (!isMounted) return
       
       setUser(currentUser)
-      // Only clear loading once auth is ready AND we have a definitive state
-      setIsLoading(false)
+      clearLoading()
       
       if (currentUser) {
         // Query only by uid to avoid needing a composite index
