@@ -10,61 +10,67 @@ import { format, addMonths, subMonths, startOfMonth, endOfMonth, startOfWeek, en
 function SwipeableEntry({ entry, onDelete, onEdit, isEditing, editTitle, setEditTitle, editCals, setEditCals, editProt, setEditProt, onSave, onCancel }) {
   const x = useMotionValue(0)
   const [isDeleting, setIsDeleting] = useState(false)
-  const [swipeState, setSwipeState] = useState('closed') // 'closed', 'delete-revealed', 'edit-revealed'
+  const [swipeState, setSwipeState] = useState('closed') // 'closed', 'delete-revealed'
   
-  const ACTION_WIDTH = 80
-  const FULL_DELETE_THRESHOLD = 200
+  const ACTION_WIDTH = 90
+  const DELETE_CONFIRM_THRESHOLD = 160
+  const EDIT_THRESHOLD = 80
   
-  const leftActionOpacity = useTransform(x, [-ACTION_WIDTH, -40, 0], [1, 0.5, 0])
-  const rightActionOpacity = useTransform(x, [0, 40, ACTION_WIDTH], [0, 0.5, 1])
-  const leftActionScale = useTransform(x, [-ACTION_WIDTH, -40, 0], [1, 0.8, 0.5])
-  const rightActionScale = useTransform(x, [0, 40, ACTION_WIDTH], [0.5, 0.8, 1])
+  // Pastel pink for delete (matches the selected-date style)
+  const deleteOpacity = useTransform(x, [0, 30, ACTION_WIDTH], [0, 0.6, 1])
+  const deleteScale = useTransform(x, [0, 30, ACTION_WIDTH], [0.6, 0.85, 1])
+  
+  // Soft stone/beige for edit
+  const editOpacity = useTransform(x, [-ACTION_WIDTH, -30, 0], [1, 0.6, 0])
+  const editScale = useTransform(x, [-ACTION_WIDTH, -30, 0], [1, 0.85, 0.6])
   
   const handleDragEnd = (_, info) => {
-    const currentX = x.get()
+    const velocity = info.velocity.x
+    const offset = info.offset.x
     
-    // Full swipe right = instant delete
-    if (info.offset.x > FULL_DELETE_THRESHOLD) {
-      setIsDeleting(true)
-      animate(x, 400, { type: "spring", stiffness: 300, damping: 30 })
-      setTimeout(() => onDelete(), 200)
+    // EDIT: Single swipe left triggers edit immediately
+    if (offset < -EDIT_THRESHOLD || velocity < -500) {
+      animate(x, 0, { type: "spring", stiffness: 300, damping: 28 })
+      setSwipeState('closed')
+      onEdit()
       return
     }
     
-    // Partial swipe right = reveal delete button
-    if (info.offset.x > 40) {
-      animate(x, ACTION_WIDTH, { type: "spring", stiffness: 400, damping: 35 })
+    // DELETE: Two-stage process
+    if (swipeState === 'delete-revealed') {
+      // Already revealed - check if swiping more to confirm delete
+      if (offset > 60 || velocity > 400) {
+        setIsDeleting(true)
+        animate(x, 500, { type: "spring", stiffness: 200, damping: 25 })
+        setTimeout(() => onDelete(), 250)
+        return
+      }
+      // Swiping back = close
+      if (offset < -20 || velocity < -200) {
+        animate(x, 0, { type: "spring", stiffness: 300, damping: 28 })
+        setSwipeState('closed')
+        return
+      }
+      // Small movement = stay revealed
+      animate(x, ACTION_WIDTH, { type: "spring", stiffness: 300, damping: 28 })
+      return
+    }
+    
+    // First swipe right = reveal delete
+    if (offset > 50 || velocity > 400) {
+      animate(x, ACTION_WIDTH, { type: "spring", stiffness: 300, damping: 28 })
       setSwipeState('delete-revealed')
       return
     }
     
-    // Partial swipe left = reveal edit button
-    if (info.offset.x < -40) {
-      animate(x, -ACTION_WIDTH, { type: "spring", stiffness: 400, damping: 35 })
-      setSwipeState('edit-revealed')
-      return
-    }
-    
-    // Small movement = snap back
-    animate(x, 0, { type: "spring", stiffness: 400, damping: 35 })
+    // Default = snap back
+    animate(x, 0, { type: "spring", stiffness: 300, damping: 28 })
     setSwipeState('closed')
-  }
-  
-  const handleDeleteClick = () => {
-    setIsDeleting(true)
-    animate(x, 400, { type: "spring", stiffness: 300, damping: 30 })
-    setTimeout(() => onDelete(), 200)
-  }
-  
-  const handleEditClick = () => {
-    animate(x, 0, { type: "spring", stiffness: 400, damping: 35 })
-    setSwipeState('closed')
-    onEdit()
   }
   
   const handleContentClick = () => {
     if (swipeState !== 'closed') {
-      animate(x, 0, { type: "spring", stiffness: 400, damping: 35 })
+      animate(x, 0, { type: "spring", stiffness: 300, damping: 28 })
       setSwipeState('closed')
     }
   }
@@ -74,6 +80,7 @@ function SwipeableEntry({ entry, onDelete, onEdit, isEditing, editTitle, setEdit
       <motion.div 
         initial={{ opacity: 0, scale: 0.95 }}
         animate={{ opacity: 1, scale: 1 }}
+        transition={{ type: "spring", stiffness: 300, damping: 25 }}
         className="p-4 bg-white/40 backdrop-blur-sm rounded-2xl border border-white/40 space-y-3"
       >
         <input 
@@ -122,39 +129,46 @@ function SwipeableEntry({ entry, onDelete, onEdit, isEditing, editTitle, setEdit
 
   return (
     <div className="relative overflow-hidden rounded-2xl">
-      {/* Delete action (right swipe - appears on left) */}
+      {/* Delete action - pastel pink */}
       <motion.div 
-        className="absolute inset-y-0 left-0 w-20 bg-red-500 flex items-center justify-center rounded-l-2xl cursor-pointer active:bg-red-600"
-        style={{ opacity: rightActionOpacity }}
-        onClick={handleDeleteClick}
+        className="absolute inset-y-0 left-0 w-24 flex items-center justify-center rounded-l-2xl"
+        style={{ 
+          opacity: deleteOpacity,
+          background: 'linear-gradient(90deg, #fecdd3 0%, #fbcfe8 100%)'
+        }}
       >
-        <motion.div style={{ scale: rightActionScale }} className="flex flex-col items-center gap-1">
-          <Trash2 className="text-white" size={22} />
-          <span className="text-white text-[10px] font-medium">Delete</span>
+        <motion.div style={{ scale: deleteScale }} className="flex flex-col items-center gap-1">
+          <Trash2 className="text-rose-400" size={20} />
+          <span className="text-rose-400 text-[10px] font-medium">
+            {swipeState === 'delete-revealed' ? 'Swipe →' : 'Delete'}
+          </span>
         </motion.div>
       </motion.div>
       
-      {/* Edit action (left swipe - appears on right) */}
+      {/* Edit action - soft stone */}
       <motion.div 
-        className="absolute inset-y-0 right-0 w-20 bg-orange-500 flex items-center justify-center rounded-r-2xl cursor-pointer active:bg-orange-600"
-        style={{ opacity: leftActionOpacity }}
-        onClick={handleEditClick}
+        className="absolute inset-y-0 right-0 w-24 flex items-center justify-center rounded-r-2xl"
+        style={{ 
+          opacity: editOpacity,
+          background: 'linear-gradient(270deg, #e7e5e4 0%, #d6d3d1 100%)'
+        }}
       >
-        <motion.div style={{ scale: leftActionScale }} className="flex flex-col items-center gap-1">
-          <Pencil className="text-white" size={22} />
-          <span className="text-white text-[10px] font-medium">Edit</span>
+        <motion.div style={{ scale: editScale }} className="flex flex-col items-center gap-1">
+          <Pencil className="text-stone-500" size={20} />
+          <span className="text-stone-500 text-[10px] font-medium">Edit</span>
         </motion.div>
       </motion.div>
       
       {/* Main content */}
       <motion.div
         drag="x"
-        dragConstraints={{ left: -ACTION_WIDTH, right: ACTION_WIDTH }}
-        dragElastic={0.1}
+        dragConstraints={{ left: -100, right: swipeState === 'delete-revealed' ? 200 : ACTION_WIDTH }}
+        dragElastic={0.15}
         onDragEnd={handleDragEnd}
         onClick={handleContentClick}
         style={{ x }}
-        className={`flex justify-between items-center p-4 bg-white/40 rounded-2xl border border-white/20 cursor-grab active:cursor-grabbing relative z-10 ${isDeleting ? 'opacity-0' : ''}`}
+        transition={{ type: "spring", stiffness: 300, damping: 28 }}
+        className={`flex justify-between items-center p-4 bg-white/40 rounded-2xl border border-white/20 cursor-grab active:cursor-grabbing relative z-10 transition-opacity duration-200 ${isDeleting ? 'opacity-0' : ''}`}
       >
         <div>
           <p className="text-base font-medium text-stone-800">{entry.title}</p>
@@ -265,7 +279,7 @@ export default function App() {
     if (!title || !cals) return
     await addDoc(collection(db, "logs"), {
       uid: user.uid, title, calories: Number(cals), protein: Number(prot) || 0,
-      createdAt: serverTimestamp(), dateString: format(new Date(), 'yyyy-MM-dd')
+      createdAt: serverTimestamp(), dateString: format(selectedDate, 'yyyy-MM-dd')
     })
     setTitle(''); setCals(''); setProt(''); setView('dashboard')
   }
