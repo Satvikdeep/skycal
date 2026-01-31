@@ -198,35 +198,52 @@ export default function App() {
   const [editCals, setEditCals] = useState('')
   const [editProt, setEditProt] = useState('')
   const [isLoading, setIsLoading] = useState(true)
+  const [authReady, setAuthReady] = useState(false)
 
-  // Handle redirect result on page load
+  // Single unified auth initialization - handles both redirect and state
   useEffect(() => {
-    const handleRedirect = async () => {
+    let unsubscribeSnapshot = null
+    let isMounted = true
+    
+    // Safety timeout - if auth doesn't respond in 5 seconds, show the app anyway
+    const safetyTimeout = setTimeout(() => {
+      if (isMounted && isLoading) {
+        console.log("Auth timeout - showing app")
+        setIsLoading(false)
+      }
+    }, 5000)
+    
+    const initAuth = async () => {
+      // First, check for any pending redirect result
       try {
         const result = await getRedirectResult(auth)
         if (result) {
-          // Successfully signed in via redirect
           console.log("Redirect sign-in successful")
         }
       } catch (error) {
-        console.error("Redirect error:", error)
-        // Don't show alert for normal page loads
+        // Silently handle redirect errors - they're often just "no redirect pending"
         if (error.code !== 'auth/popup-closed-by-user') {
-          console.error("Auth error code:", error.code)
+          console.error("Redirect check:", error.code)
         }
-      } finally {
-        setIsLoading(false)
+      }
+      
+      // Mark auth as ready to proceed
+      if (isMounted) {
+        setAuthReady(true)
       }
     }
-    handleRedirect()
-  }, [])
-
-  // Auth & Data Listener
-  useEffect(() => {
-    let unsubscribeSnapshot = null
+    
+    // Start the redirect check
+    initAuth()
+    
+    // Set up auth state listener
     const unsubscribeAuth = onAuthStateChanged(auth, (currentUser) => {
+      if (!isMounted) return
+      
       setUser(currentUser)
+      // Only clear loading once auth is ready AND we have a definitive state
       setIsLoading(false)
+      
       if (currentUser) {
         // Query only by uid to avoid needing a composite index
         const q = query(
@@ -234,6 +251,7 @@ export default function App() {
           where("uid", "==", currentUser.uid)
         )
         unsubscribeSnapshot = onSnapshot(q, (snapshot) => {
+          if (!isMounted) return
           const loadedEntries = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }))
           // Sort client-side by createdAt descending
           loadedEntries.sort((a, b) => {
@@ -250,6 +268,8 @@ export default function App() {
       }
     })
     return () => {
+      isMounted = false
+      clearTimeout(safetyTimeout)
       unsubscribeAuth()
       if (unsubscribeSnapshot) unsubscribeSnapshot()
     }
