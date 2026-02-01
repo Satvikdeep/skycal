@@ -28,9 +28,48 @@
     <link rel="icon" type="image/jpeg" href="/skycal-logo.jpg" />
     <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
     <title>SkyCal</title>
+    <style>
+      /* Fallback loading UI - shows immediately */
+      #fallback-loader {
+        position: fixed;
+        inset: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: linear-gradient(135deg, #fdf2f8 0%, #fce7f3 100%);
+        font-family: Georgia, serif;
+        color: #57534e;
+      }
+      #fallback-loader.hidden { display: none; }
+    </style>
   </head>
   <body>
+    <div id="fallback-loader">
+      <div style="text-align: center;">
+        <h1 style="font-size: 2.5rem; font-style: italic; margin-bottom: 1rem;">SkyCal</h1>
+        <p>Loading...</p>
+      </div>
+    </div>
     <div id="root"></div>
+    <script>
+      // Debug: Log when HTML loads
+      console.log('[SkyCal] HTML loaded at:', new Date().toISOString());
+      
+      // Hide fallback when React renders
+      window.hideFallback = function() {
+        var el = document.getElementById('fallback-loader');
+        if (el) el.classList.add('hidden');
+      };
+      
+      // Emergency: show error if JS completely fails
+      window.onerror = function(msg, url, line) {
+        console.error('[SkyCal] JS Error:', msg, url, line);
+        var loader = document.getElementById('fallback-loader');
+        if (loader) {
+          loader.innerHTML = '<div style="text-align:center;padding:2rem;"><h1 style="font-size:2rem;font-style:italic;">SkyCal</h1><p style="margin-top:1rem;">Something went wrong. Please refresh.</p><p style="font-size:0.75rem;margin-top:0.5rem;color:#999;">' + msg + '</p></div>';
+        }
+      };
+    </script>
     <script type="module" src="/src/main.jsx"></script>
   </body>
 </html>
