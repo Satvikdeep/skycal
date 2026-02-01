@@ -6,6 +6,7 @@ import { motion, AnimatePresence, useMotionValue, useTransform, animate } from '
 import { LogOut, ChevronLeft, ChevronRight, Plus, Trash2, Pencil, Check, X } from 'lucide-react'
 import { format, addMonths, subMonths, startOfMonth, endOfMonth, startOfWeek, endOfWeek, isSameMonth, isSameDay, addDays } from 'date-fns'
 import { SpeedInsights } from "@vercel/speed-insights/react"
+import { Analytics } from "@vercel/analytics/react"
 
 
 // iOS-style Swipeable Entry Component
@@ -369,6 +370,7 @@ export default function App() {
   return (
     <div className="min-h-dvh flex flex-col items-center justify-center p-4">
       <SpeedInsights />
+      <Analytics />
       {isLoading ? (
         <motion.div 
           initial={{ opacity: 0 }} 
