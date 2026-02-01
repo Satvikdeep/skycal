@@ -215,11 +215,11 @@ export default function App() {
       }
     }
     
-    // Safety timeout - if auth doesn't respond in 4 seconds, show the app anyway
+    // Safety timeout - if auth doesn't respond in 2 seconds, show the app anyway
     const safetyTimeout = setTimeout(() => {
       console.log("Auth timeout - forcing app display")
       clearLoading()
-    }, 4000)
+    }, 2000)
     
     const initAuth = async () => {
       // First, check for any pending redirect result
