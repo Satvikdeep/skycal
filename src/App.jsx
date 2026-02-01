@@ -5,6 +5,8 @@ import { collection, addDoc, doc, deleteDoc, updateDoc, query, where, onSnapshot
 import { motion, AnimatePresence, useMotionValue, useTransform, animate } from 'framer-motion'
 import { LogOut, ChevronLeft, ChevronRight, Plus, Trash2, Pencil, Check, X } from 'lucide-react'
 import { format, addMonths, subMonths, startOfMonth, endOfMonth, startOfWeek, endOfWeek, isSameMonth, isSameDay, addDays } from 'date-fns'
+import { SpeedInsights } from "@vercel/speed-insights/react"
+
 
 // iOS-style Swipeable Entry Component
 function SwipeableEntry({ entry, onDelete, onEdit, isEditing, editTitle, setEditTitle, editCals, setEditCals, editProt, setEditProt, onSave, onCancel }) {
@@ -366,6 +368,7 @@ export default function App() {
 
   return (
     <div className="min-h-dvh flex flex-col items-center justify-center p-4">
+      <SpeedInsights />
       {isLoading ? (
         <motion.div 
           initial={{ opacity: 0 }} 
