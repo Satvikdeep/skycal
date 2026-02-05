@@ -1,4 +1,10 @@
 {
+  "crons": [
+    {
+      "path": "/api/dailyCalorieCheck",
+      "schedule": "30 1 * * *"
+    }
+  ],
   "headers": [
     {
       "source": "/(.*)",

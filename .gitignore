@@ -24,3 +24,6 @@ dist-ssr
 *.sw?
 
 .env
+ALERT_FEATURE_SETUP.md
+FIRESTORE_RULES.txt
+.env.example

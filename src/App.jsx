@@ -188,7 +188,7 @@ export default function App() {
   const [entries, setEntries] = useState([])
   const [currentMonth, setCurrentMonth] = useState(new Date()) 
   const [selectedDate, setSelectedDate] = useState(new Date()) 
-  const [view, setView] = useState('dashboard') 
+  const [view, setView] = useState('dashboard')
 
   const [title, setTitle] = useState('')
   const [cals, setCals] = useState('')
