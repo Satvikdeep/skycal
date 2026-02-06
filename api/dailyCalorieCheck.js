@@ -20,9 +20,13 @@ const SATVIK_UID = process.env.MY_UID;
 const CALORIE_THRESHOLD = parseInt(process.env.CALORIE_THRESHOLD) || 1800;
 
 export default async function handler(req, res) {
-  // Verify this is a cron job request (Vercel sends this header)
+  // Verify this is a legitimate cron job request
+  // Vercel cron sends CRON_SECRET via x-vercel-cron-signature or we check Authorization header for manual triggers
   const authHeader = req.headers.authorization;
-  if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
+  const isVercelCron = req.headers['x-vercel-cron'] === '1';
+  const isManualTrigger = authHeader === `Bearer ${process.env.CRON_SECRET}`;
+  
+  if (!isVercelCron && !isManualTrigger) {
     return res.status(401).json({ error: 'Unauthorized' });
   }
 
