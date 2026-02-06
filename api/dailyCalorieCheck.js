@@ -2,18 +2,23 @@ import { initializeApp, cert, getApps } from 'firebase-admin/app';
 import { getFirestore } from 'firebase-admin/firestore';
 import emailjs from '@emailjs/nodejs';
 
-// Initialize Firebase Admin (only once)
-if (!getApps().length) {
-  initializeApp({
-    credential: cert({
-      projectId: process.env.FIREBASE_PROJECT_ID,
-      clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
-      privateKey: process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, '\n'),
-    }),
-  });
-}
+let db;
 
-const db = getFirestore();
+// Initialize Firebase Admin (only once)
+try {
+  if (!getApps().length) {
+    initializeApp({
+      credential: cert({
+        projectId: process.env.FIREBASE_PROJECT_ID,
+        clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
+        privateKey: process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, '\n'),
+      }),
+    });
+  }
+  db = getFirestore();
+} catch (initError) {
+  console.error('Firebase init error:', initError);
+}
 
 // Your specific UID and settings from environment variables
 const SATVIK_UID = process.env.MY_UID;
@@ -31,6 +36,14 @@ export default async function handler(req, res) {
   }
 
   try {
+    // Debug: Check if env vars are set
+    if (!process.env.MY_UID) {
+      return res.status(500).json({ error: 'MY_UID environment variable not set' });
+    }
+    if (!process.env.FIREBASE_PROJECT_ID) {
+      return res.status(500).json({ error: 'FIREBASE_PROJECT_ID environment variable not set' });
+    }
+
     // Get yesterday's date
     const yesterday = new Date();
     yesterday.setDate(yesterday.getDate() - 1);
