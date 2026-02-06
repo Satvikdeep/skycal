@@ -124,17 +124,34 @@ async function setAlertDoc(accessToken, uid, data) {
 }
 
 async function sendEmailJS(templateParams) {
+  const serviceId = process.env.VITE_EMAILJS_SERVICE_ID;
+  const templateId = process.env.VITE_EMAILJS_TEMPLATE_ID;
+  const publicKey = process.env.VITE_EMAILJS_PUBLIC_KEY;
+  
+  // Debug: check if env vars are set
+  if (!serviceId || !templateId || !publicKey) {
+    console.error('Missing EmailJS env vars:', { serviceId: !!serviceId, templateId: !!templateId, publicKey: !!publicKey });
+    return { ok: false, error: 'Missing EmailJS env vars' };
+  }
+  
   const response = await fetch('https://api.emailjs.com/api/v1.0/email/send', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
-      service_id: process.env.VITE_EMAILJS_SERVICE_ID,
-      template_id: process.env.VITE_EMAILJS_TEMPLATE_ID,
-      user_id: process.env.VITE_EMAILJS_PUBLIC_KEY,
+      service_id: serviceId,
+      template_id: templateId,
+      user_id: publicKey,
       template_params: templateParams,
     }),
   });
-  return response.ok;
+  
+  if (!response.ok) {
+    const errorText = await response.text();
+    console.error('EmailJS error:', errorText);
+    return { ok: false, error: errorText };
+  }
+  
+  return { ok: true };
 }
 
 export default async function handler(req, res) {
@@ -188,7 +205,7 @@ export default async function handler(req, res) {
     }
 
     // Send email
-    const emailSent = await sendEmailJS({
+    const emailResult = await sendEmailJS({
       to_email: process.env.GIRLFRIEND_EMAIL,
       cc_email: process.env.MY_EMAIL,
       girlfriend_name: process.env.GIRLFRIEND_NAME,
@@ -197,8 +214,8 @@ export default async function handler(req, res) {
       calories_over: totalCalories - CALORIE_THRESHOLD,
     });
 
-    if (!emailSent) {
-      return res.status(500).json({ error: 'Failed to send email' });
+    if (!emailResult.ok) {
+      return res.status(500).json({ error: 'Failed to send email', details: emailResult.error });
     }
 
     // Record alert
