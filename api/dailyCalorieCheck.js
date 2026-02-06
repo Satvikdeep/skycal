@@ -138,11 +138,13 @@ async function sendEmailJS(templateParams) {
 }
 
 export default async function handler(req, res) {
+  // Allow test mode with ?test=1 for debugging (remove in production)
+  const isTestMode = req.query.test === '1';
   const authHeader = req.headers.authorization;
   const isVercelCron = req.headers['x-vercel-cron'] === '1';
   const isManualTrigger = authHeader === `Bearer ${process.env.CRON_SECRET}`;
 
-  if (!isVercelCron && !isManualTrigger) {
+  if (!isVercelCron && !isManualTrigger && !isTestMode) {
     return res.status(401).json({ error: 'Unauthorized' });
   }
 
