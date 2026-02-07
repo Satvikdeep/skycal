@@ -444,6 +444,7 @@ export default function App() {
           <p className="text-stone-450 text-xs mt-6 font-light">~ made with love by satvik ~</p>
         </motion.div>
       ) : (
+        <>
         <motion.div layout className="glass-panel w-full md:max-w-md min-h-dvh md:min-h-0 md:h-[85vh] rounded-none md:rounded-[40px] flex flex-col md:overflow-hidden relative shadow-none md:shadow-2xl backdrop-blur-xl bg-white/40 border-0 md:border border-white/60">
           
           <div className="p-8 pb-4 flex justify-between items-start">
@@ -742,6 +743,7 @@ export default function App() {
             <button onClick={() => { setView('stats'); setShowProfile(false) }} className={`px-5 py-2 rounded-full text-sm font-medium transition-all ${view === 'stats' ? 'bg-white shadow text-stone-800' : 'text-stone-500 hover:text-stone-700'}`}>Reflect</button>
           </div>
         </div>
+        </>
       )}
     </div>
   )
