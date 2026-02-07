@@ -424,7 +424,7 @@ export default function App() {
   }
 
   return (
-    <div className="min-h-dvh flex flex-col items-center justify-center p-4">
+    <div className="h-dvh flex flex-col items-center justify-center p-0 md:p-4">
       <SpeedInsights />
       <Analytics />
       {isLoading ? (
@@ -444,7 +444,7 @@ export default function App() {
           <p className="text-stone-450 text-xs mt-6 font-light">~ made with love by satvik ~</p>
         </motion.div>
       ) : (
-        <motion.div layout className="glass-panel w-full max-w-md h-[85vh] rounded-[40px] flex flex-col overflow-hidden relative shadow-2xl backdrop-blur-xl bg-white/40 border border-white/60">
+        <motion.div layout className="glass-panel w-full md:max-w-md h-full md:h-[85vh] rounded-none md:rounded-[40px] flex flex-col overflow-hidden relative shadow-none md:shadow-2xl backdrop-blur-xl bg-white/40 border-0 md:border border-white/60">
           
           <div className="p-8 pb-4 flex justify-between items-start">
             <div>
@@ -724,7 +724,7 @@ export default function App() {
             </AnimatePresence>
           </div>
 
-          <div className="p-4 flex justify-center pb-8">
+          <div className="p-4 flex justify-center pb-12 md:pb-8">
             <div className="bg-white/20 backdrop-blur-md p-1 rounded-full flex gap-1 shadow-inner border border-white/20">
               <button onClick={() => { setView('dashboard'); setShowProfile(false) }} className={`px-5 py-2 rounded-full text-sm font-medium transition-all ${view === 'dashboard' ? 'bg-white shadow text-stone-800' : 'text-stone-500 hover:text-stone-700'}`}>Journal</button>
               <button onClick={() => { setView('calendar'); setShowProfile(false) }} className={`px-5 py-2 rounded-full text-sm font-medium transition-all ${view === 'calendar' ? 'bg-white shadow text-stone-800' : 'text-stone-500 hover:text-stone-700'}`}>Calendar</button>
