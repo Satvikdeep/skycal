@@ -447,7 +447,7 @@ export default function App() {
         <>
         <motion.div layout className="glass-panel w-full md:max-w-md min-h-dvh md:min-h-0 md:h-[85vh] rounded-none md:rounded-[40px] flex flex-col md:overflow-hidden relative shadow-none md:shadow-2xl backdrop-blur-xl bg-white/40 border-0 md:border border-white/60">
           
-          <div className="p-8 pb-4 flex justify-between items-start">
+          <div className="p-8 pt-16 md:pt-8 pb-4 flex justify-between items-start">
             <div>
               <p className="text-[10px] uppercase tracking-widest text-stone-500 mb-1">Current Log</p>
               <h2 className="text-3xl italic text-stone-800">{format(selectedDate, 'MMMM do')}</h2>
@@ -736,7 +736,7 @@ export default function App() {
         </motion.div>
 
         {/* Mobile Navigation - Fixed Bottom */}
-        <div className="md:hidden fixed bottom-6 left-0 right-0 z-50 flex justify-center pointer-events-none">
+        <div className="md:hidden fixed bottom-10 left-0 right-0 z-50 flex justify-center pointer-events-none">
           <div className="bg-white/20 backdrop-blur-md p-1 rounded-full flex gap-1 shadow-inner border border-white/20 pointer-events-auto">
             <button onClick={() => { setView('dashboard'); setShowProfile(false) }} className={`px-5 py-2 rounded-full text-sm font-medium transition-all ${view === 'dashboard' ? 'bg-white shadow text-stone-800' : 'text-stone-500 hover:text-stone-700'}`}>Journal</button>
             <button onClick={() => { setView('calendar'); setShowProfile(false) }} className={`px-5 py-2 rounded-full text-sm font-medium transition-all ${view === 'calendar' ? 'bg-white shadow text-stone-800' : 'text-stone-500 hover:text-stone-700'}`}>Calendar</button>
