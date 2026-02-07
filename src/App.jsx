@@ -424,7 +424,7 @@ export default function App() {
   }
 
   return (
-    <div className="h-dvh flex flex-col items-center justify-center p-0 md:p-4">
+    <div className="min-h-dvh flex flex-col items-center justify-center p-0 md:p-4">
       <SpeedInsights />
       <Analytics />
       {isLoading ? (
@@ -444,7 +444,7 @@ export default function App() {
           <p className="text-stone-450 text-xs mt-6 font-light">~ made with love by satvik ~</p>
         </motion.div>
       ) : (
-        <motion.div layout className="glass-panel w-full md:max-w-md h-full md:h-[85vh] rounded-none md:rounded-[40px] flex flex-col overflow-hidden relative shadow-none md:shadow-2xl backdrop-blur-xl bg-white/40 border-0 md:border border-white/60">
+        <motion.div layout className="glass-panel w-full md:max-w-md min-h-dvh md:min-h-0 md:h-[85vh] rounded-none md:rounded-[40px] flex flex-col md:overflow-hidden relative shadow-none md:shadow-2xl backdrop-blur-xl bg-white/40 border-0 md:border border-white/60">
           
           <div className="p-8 pb-4 flex justify-between items-start">
             <div>
@@ -492,7 +492,7 @@ export default function App() {
              <div className="text-4xl font-light text-stone-800">{totalCals} <span className="text-sm font-normal text-stone-400">kcal</span></div>
           </div>
 
-          <div className="flex-1 overflow-y-auto scrollbar-hide p-6">
+          <div className="flex-1 md:overflow-y-auto scrollbar-hide p-6 pb-32 md:pb-6">
             <AnimatePresence mode="wait">
               {view === 'dashboard' ? (
                 <motion.div key="dash" initial={{opacity: 0}} animate={{opacity: 1}} exit={{opacity: 0}} className="space-y-6">
@@ -724,7 +724,7 @@ export default function App() {
             </AnimatePresence>
           </div>
 
-          <div className="p-4 flex justify-center pb-12 md:pb-8">
+          <div className="hidden md:flex p-4 justify-center pb-8">
             <div className="bg-white/20 backdrop-blur-md p-1 rounded-full flex gap-1 shadow-inner border border-white/20">
               <button onClick={() => { setView('dashboard'); setShowProfile(false) }} className={`px-5 py-2 rounded-full text-sm font-medium transition-all ${view === 'dashboard' ? 'bg-white shadow text-stone-800' : 'text-stone-500 hover:text-stone-700'}`}>Journal</button>
               <button onClick={() => { setView('calendar'); setShowProfile(false) }} className={`px-5 py-2 rounded-full text-sm font-medium transition-all ${view === 'calendar' ? 'bg-white shadow text-stone-800' : 'text-stone-500 hover:text-stone-700'}`}>Calendar</button>
@@ -733,6 +733,15 @@ export default function App() {
           </div>
 
         </motion.div>
+
+        {/* Mobile Navigation - Fixed Bottom */}
+        <div className="md:hidden fixed bottom-6 left-0 right-0 z-50 flex justify-center pointer-events-none">
+          <div className="bg-white/20 backdrop-blur-md p-1 rounded-full flex gap-1 shadow-inner border border-white/20 pointer-events-auto">
+            <button onClick={() => { setView('dashboard'); setShowProfile(false) }} className={`px-5 py-2 rounded-full text-sm font-medium transition-all ${view === 'dashboard' ? 'bg-white shadow text-stone-800' : 'text-stone-500 hover:text-stone-700'}`}>Journal</button>
+            <button onClick={() => { setView('calendar'); setShowProfile(false) }} className={`px-5 py-2 rounded-full text-sm font-medium transition-all ${view === 'calendar' ? 'bg-white shadow text-stone-800' : 'text-stone-500 hover:text-stone-700'}`}>Calendar</button>
+            <button onClick={() => { setView('stats'); setShowProfile(false) }} className={`px-5 py-2 rounded-full text-sm font-medium transition-all ${view === 'stats' ? 'bg-white shadow text-stone-800' : 'text-stone-500 hover:text-stone-700'}`}>Reflect</button>
+          </div>
+        </div>
       )}
     </div>
   )
