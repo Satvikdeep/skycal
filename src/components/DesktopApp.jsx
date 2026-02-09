@@ -1,6 +1,6 @@
 import { useState, useMemo, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { ChevronLeft, ChevronRight, Plus } from 'lucide-react'
+import { ChevronLeft, ChevronRight, Plus, Github, Globe } from 'lucide-react'
 import { format, addMonths, subMonths, isSameDay, subDays, startOfMonth, endOfMonth, startOfWeek, endOfWeek, addDays, isSameMonth } from 'date-fns'
 import SwipeableEntry from './SwipeableEntry'
 
@@ -52,6 +52,15 @@ export default function DesktopApp({
   const weekStart = weeklyStats.days[0]?.date || new Date()
   const weekEnd = weeklyStats.days[6]?.date || new Date()
 
+  // Live IST clock
+  const [istTime, setIstTime] = useState(() => new Date().toLocaleTimeString('en-IN', { timeZone: 'Asia/Kolkata', hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true }))
+  useEffect(() => {
+    const tick = setInterval(() => {
+      setIstTime(new Date().toLocaleTimeString('en-IN', { timeZone: 'Asia/Kolkata', hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true }))
+    }, 1000)
+    return () => clearInterval(tick)
+  }, [])
+
   // Reflect page local state
   const [weekOffset, setWeekOffset] = useState(0)
   const [weekDir, setWeekDir] = useState(0)
@@ -59,9 +68,18 @@ export default function DesktopApp({
   const [monthDir, setMonthDir] = useState(0)
   const [editGoal, setEditGoal] = useState(CALORIE_LIMIT)
   const [editMaint, setEditMaint] = useState(MAINTENANCE_CALORIES)
+  const [savedMsg, setSavedMsg] = useState(false)
+  const [focusedField, setFocusedField] = useState(null)
+  const [showFooter, setShowFooter] = useState(false)
 
   useEffect(() => { setEditGoal(CALORIE_LIMIT) }, [CALORIE_LIMIT])
   useEffect(() => { setEditMaint(MAINTENANCE_CALORIES) }, [MAINTENANCE_CALORIES])
+
+  const handleSaveSettings = () => {
+    saveSettings(editGoal, editMaint)
+    setSavedMsg(true)
+    setTimeout(() => setSavedMsg(false), 1500)
+  }
 
   const goToPrevWeek = () => { setWeekDir(-1); setWeekOffset(p => p - 1) }
   const goToNextWeek = () => { if (weekOffset < 0) { setWeekDir(1); setWeekOffset(p => p + 1) } }
@@ -114,15 +132,20 @@ export default function DesktopApp({
   }, [reflectMonth, dailyTotals, MAINTENANCE_CALORIES])
 
   return (
-    <div className="min-h-dvh w-full px-16 py-10">
-      <div className="max-w-[1260px] mx-auto space-y-10">
+    <div className="min-h-dvh w-full px-16 py-10 flex flex-col">
+      <div className="max-w-[1260px] mx-auto space-y-10 flex-1 w-full">
         <div className="grid grid-cols-[1fr_auto_1fr] items-center relative">
-          <div className="flex items-center gap-3 justify-self-start">
-            <img src="/skycal-logo.png" alt="SkyCal" className="h-10 w-auto object-contain" />
+          <motion.div
+            className="flex items-end gap-3 justify-self-start cursor-pointer select-none"
+            onClick={() => setShowFooter(f => !f)}
+            whileTap={{ scale: 0.92 }}
+            transition={{ type: 'spring', stiffness: 400, damping: 20 }}
+          >
+            <img src="/skycal-logo.png" alt="SkyCal" className="h-[46px] w-auto object-contain" />
             <div>
               <p className="text-2xl font-serif italic text-stone-800 tracking-tight">SkyCal</p>
             </div>
-          </div>
+          </motion.div>
 
           <div className="bg-white/60 backdrop-blur-md p-1 rounded-full flex gap-1 shadow-inner border border-white/40 relative">
             <button
@@ -135,7 +158,7 @@ export default function DesktopApp({
               {view !== 'stats' && (
                 <motion.span
                   layoutId="nav-pill"
-                  transition={{ type: 'spring', stiffness: 220, damping: 16, mass: 0.8 }}
+                  transition={{ type: 'spring', stiffness: 140, damping: 12, mass: 1 }}
                   className="absolute inset-0 rounded-full bg-stone-200/70 border border-white/70 shadow"
                 />
               )}
@@ -153,7 +176,7 @@ export default function DesktopApp({
               {view === 'stats' && (
                 <motion.span
                   layoutId="nav-pill"
-                  transition={{ type: 'spring', stiffness: 220, damping: 16, mass: 0.8 }}
+                  transition={{ type: 'spring', stiffness: 140, damping: 12, mass: 1 }}
                   className="absolute inset-0 rounded-full bg-stone-200/70 border border-white/70 shadow"
                 />
               )}
@@ -179,7 +202,7 @@ export default function DesktopApp({
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -10 }}
                 transition={{ type: 'spring', stiffness: 300, damping: 28 }}
-                className="absolute right-0 top-14 w-64"
+                className="absolute right-0 top-14 w-64 z-50"
               >
                 <div className="bg-white/70 backdrop-blur-sm rounded-2xl border border-white/50 p-4 space-y-3 shadow-lg">
                   <div className="flex items-center gap-3">
@@ -198,30 +221,70 @@ export default function DesktopApp({
                       <p className="text-xs text-stone-500 truncate">{user?.email}</p>
                     </div>
                   </div>
-                  <div className="border-t border-stone-200/40 pt-3 space-y-2">
+                  <div className="border-t border-stone-200/40 pt-3 space-y-3">
                     <p className="text-[10px] uppercase tracking-widest text-stone-400 font-medium">Goals</p>
-                    <div className="flex items-center gap-2">
-                      <label className="text-xs text-stone-500 w-24">Daily Goal</label>
-                      <input
-                        type="number"
-                        value={editGoal}
-                        onChange={e => setEditGoal(e.target.value)}
-                        onBlur={() => saveSettings(editGoal, editMaint)}
-                        className="flex-1 bg-white/50 border border-white/40 rounded-lg px-2.5 py-1.5 text-xs text-stone-700 focus:outline-none focus:ring-1 focus:ring-stone-300 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-                      />
-                      <span className="text-[10px] text-stone-400">kcal</span>
+                    <div className="space-y-1">
+                      <label className="text-[11px] text-stone-500 font-medium">Daily Goal</label>
+                      <div className="relative">
+                        <input
+                          type="number"
+                          value={editGoal}
+                          onChange={e => setEditGoal(e.target.value)}
+                          onFocus={() => setFocusedField('goal')}
+                          onBlur={() => setTimeout(() => setFocusedField(f => f === 'goal' ? null : f), 150)}
+                          onKeyDown={e => { if (e.key === 'Enter') { handleSaveSettings(); e.target.blur() } }}
+                          className="w-full bg-white/60 border border-stone-200/50 rounded-xl px-3 py-2 pr-16 text-sm text-stone-700 focus:outline-none focus:ring-1 focus:ring-stone-300 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                        />
+                        <div className="absolute right-1.5 top-1/2 -translate-y-1/2 flex items-center gap-1">
+                          {focusedField === 'goal' && (
+                            <button
+                              onMouseDown={e => { e.preventDefault(); handleSaveSettings() }}
+                              className="px-2 py-0.5 rounded-lg bg-stone-800 hover:bg-stone-900 text-white text-[10px] font-semibold transition shadow-sm"
+                            >
+                              Save
+                            </button>
+                          )}
+                          <span className="text-[10px] text-stone-400">kcal</span>
+                        </div>
+                      </div>
                     </div>
-                    <div className="flex items-center gap-2">
-                      <label className="text-xs text-stone-500 w-24">Maintenance</label>
-                      <input
-                        type="number"
-                        value={editMaint}
-                        onChange={e => setEditMaint(e.target.value)}
-                        onBlur={() => saveSettings(editGoal, editMaint)}
-                        className="flex-1 bg-white/50 border border-white/40 rounded-lg px-2.5 py-1.5 text-xs text-stone-700 focus:outline-none focus:ring-1 focus:ring-stone-300 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-                      />
-                      <span className="text-[10px] text-stone-400">kcal</span>
+                    <div className="space-y-1">
+                      <label className="text-[11px] text-stone-500 font-medium">Maintenance</label>
+                      <div className="relative">
+                        <input
+                          type="number"
+                          value={editMaint}
+                          onChange={e => setEditMaint(e.target.value)}
+                          onFocus={() => setFocusedField('maint')}
+                          onBlur={() => setTimeout(() => setFocusedField(f => f === 'maint' ? null : f), 150)}
+                          onKeyDown={e => { if (e.key === 'Enter') { handleSaveSettings(); e.target.blur() } }}
+                          className="w-full bg-white/60 border border-stone-200/50 rounded-xl px-3 py-2 pr-16 text-sm text-stone-700 focus:outline-none focus:ring-1 focus:ring-stone-300 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                        />
+                        <div className="absolute right-1.5 top-1/2 -translate-y-1/2 flex items-center gap-1">
+                          {focusedField === 'maint' && (
+                            <button
+                              onMouseDown={e => { e.preventDefault(); handleSaveSettings() }}
+                              className="px-2 py-0.5 rounded-lg bg-stone-800 hover:bg-stone-900 text-white text-[10px] font-semibold transition shadow-sm"
+                            >
+                              Save
+                            </button>
+                          )}
+                          <span className="text-[10px] text-stone-400">kcal</span>
+                        </div>
+                      </div>
                     </div>
+                    <AnimatePresence>
+                      {savedMsg && (
+                        <motion.p
+                          initial={{ opacity: 0, y: -4 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          exit={{ opacity: 0 }}
+                          className="text-[11px] text-stone-800 font-medium text-center"
+                        >
+                          ✓ Saved
+                        </motion.p>
+                      )}
+                    </AnimatePresence>
                   </div>
                   <button
                     onClick={onSignOut}
@@ -389,13 +452,11 @@ export default function DesktopApp({
 
                                       {/* Maintenance baseline */}
                                       <line x1={padX} y1={maintY} x2={chartW - padX} y2={maintY} stroke="#9a8e82" strokeWidth="1" strokeDasharray="6 4" />
-                                      <rect x={padX - 2} y={maintY - 9} width="32" height="16" rx="4" fill="white" fillOpacity="0.7" />
-                                      <text x={padX + 14} y={maintY + 3} textAnchor="middle" fontSize="10" fill="#78716c" fontFamily="sans-serif" fontWeight="600">{MAINTENANCE_CALORIES}</text>
+                                      <text x={padX - 6} y={maintY + 4} textAnchor="end" fontSize="10" fill="#a8a098" fontFamily="sans-serif" fontWeight="500">{MAINTENANCE_CALORIES}</text>
 
                                       {/* Goal baseline */}
                                       <line x1={padX} y1={goalY} x2={chartW - padX} y2={goalY} stroke="#9a8e82" strokeWidth="1" strokeDasharray="4 3" />
-                                      <rect x={padX - 2} y={goalY - 9} width="32" height="16" rx="4" fill="white" fillOpacity="0.7" />
-                                      <text x={padX + 14} y={goalY + 3} textAnchor="middle" fontSize="10" fill="#78716c" fontFamily="sans-serif" fontWeight="600">{CALORIE_LIMIT}</text>
+                                      <text x={padX - 6} y={goalY + 4} textAnchor="end" fontSize="10" fill="#a8a098" fontFamily="sans-serif" fontWeight="500">{CALORIE_LIMIT}</text>
 
                                       {/* Area fills */}
                                       <path d={areaPath} fill="url(#deskAreaRed)" clipPath="url(#deskClipAbove)" />
@@ -427,8 +488,8 @@ export default function DesktopApp({
                                                 x={p.x}
                                                 y={p.y - 12}
                                                 textAnchor="middle"
-                                                fontSize="11"
-                                                fill="#8a8078"
+                                                fontSize="10"
+                                                fill="#b0a89e"
                                                 fontFamily="sans-serif"
                                                 fontWeight="500"
                                               >
@@ -555,13 +616,15 @@ export default function DesktopApp({
                     {dayNumber}
                     <sup className="ml-0.5 text-[0.45em] font-medium">{daySuffix}</sup>
                   </h2>
+                </div>
+                <div className="flex items-center gap-2">
+                  <p className="text-sm text-stone-500">{format(selectedDate, 'EEEE, yyyy')}</p>
                   {isToday && (
-                    <span className="text-[10px] tracking-[0.2em] text-stone-500 leading-none">
+                    <span className="text-[11px] text-stone-600 leading-none bg-white/30 backdrop-blur-sm px-2.5 py-0.5 rounded-full border border-white/40">
                       today
                     </span>
                   )}
                 </div>
-                <p className="text-sm text-stone-500">{format(selectedDate, 'EEEE, yyyy')}</p>
               </div>
 
               <div className="glass-panel rounded-[28px] px-6 py-5 space-y-4">
@@ -626,14 +689,14 @@ export default function DesktopApp({
                       placeholder="0"
                       className="w-12 bg-transparent text-right text-sm text-stone-700 focus:outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                     />
-                    <span>k</span>
+                    <span>cal</span>
                     <div className="w-px h-4 bg-stone-200/70"></div>
                     <input
                       type="number"
                       value={prot}
                       onChange={e => setProt(e.target.value)}
                       placeholder="0"
-                      className="w-8 bg-transparent text-right text-sm text-stone-700 focus:outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                      className="w-5 bg-transparent text-right text-sm text-stone-700 focus:outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                     />
                     <span>p</span>
                   </div>
@@ -695,10 +758,49 @@ export default function DesktopApp({
                   </span>
                 </div>
               </div>
+              <div className="text-right mt-4">
+                <p className="text-[10px] uppercase tracking-widest text-stone-600 mb-0.5">IST</p>
+                <p className="text-lg font-light text-stone-600 tabular-nums">{istTime}</p>
+              </div>
             </div>
           </div>
         )}
       </div>
+
+      <AnimatePresence>
+        {showFooter && (
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 10 }}
+            transition={{ type: 'spring', stiffness: 300, damping: 25 }}
+            className="flex justify-end pb-1 pt-4 pr-4"
+          >
+            <div className="flex flex-col items-end gap-2">
+              <motion.img
+                src="/satvik.png"
+                alt="Satvik"
+                className="w-40 h-40 rounded-2xl object-cover object-top"
+                initial={{ opacity: 0, y: 20, filter: 'drop-shadow(0 0 0px rgba(255,255,255,0))' }}
+                animate={{ opacity: 1, y: 0, filter: 'drop-shadow(0 0 0px rgba(255,255,255,0))' }}
+                whileHover={{ filter: 'drop-shadow(0 0 14px rgba(255,255,255,0.75))' }}
+                transition={{ type: 'spring', stiffness: 200, damping: 22, delay: 0.05 }}
+              />
+              <div className="group flex items-center gap-3 bg-white/20 backdrop-blur-sm px-4 py-2 rounded-full border border-white/30 shadow-sm hover:bg-white/35 transition cursor-default">
+              <div className="flex items-center gap-1.5">
+                <a href="https://github.com/Satvikdeep" target="_blank" rel="noopener noreferrer" className="text-stone-500 hover:text-stone-700 transition">
+                  <Github size={13} />
+                </a>
+                <a href="https://github.com/Satvikdeep" target="_blank" rel="noopener noreferrer" className="text-stone-500 hover:text-stone-700 transition">
+                  <Globe size={13} />
+                </a>
+              </div>
+              <p className="text-[11px] text-stone-500 group-hover:text-stone-700 transition">designed by satvik, with much love.</p>
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   )
 }

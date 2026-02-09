@@ -44,7 +44,17 @@ export default function MobileApp({
   onSignOut,
 }) {
   const [editGoal, setEditGoal] = useState(CALORIE_LIMIT)
+  const [editMaint, setEditMaint] = useState(MAINTENANCE_CALORIES)
+  const [savedMsg, setSavedMsg] = useState(false)
+  const [focusedField, setFocusedField] = useState(null)
   useEffect(() => { setEditGoal(CALORIE_LIMIT) }, [CALORIE_LIMIT])
+  useEffect(() => { setEditMaint(MAINTENANCE_CALORIES) }, [MAINTENANCE_CALORIES])
+
+  const handleSaveSettings = () => {
+    saveSettings(editGoal, editMaint)
+    setSavedMsg(true)
+    setTimeout(() => setSavedMsg(false), 1500)
+  }
   return (
     <>
       <motion.div
@@ -91,18 +101,70 @@ export default function MobileApp({
                     <p className="text-xs text-stone-500 truncate">{user?.email}</p>
                   </div>
                 </div>
-                <div className="border-t border-stone-200/30 pt-3">
-                  <div className="flex items-center gap-2">
-                    <label className="text-xs text-stone-500 flex-shrink-0">Daily Goal</label>
-                    <input
-                      type="number"
-                      value={editGoal}
-                      onChange={e => setEditGoal(e.target.value)}
-                      onBlur={() => saveSettings(editGoal, MAINTENANCE_CALORIES)}
-                      className="flex-1 bg-white/40 border border-white/30 rounded-lg px-2.5 py-1.5 text-xs text-stone-700 focus:outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-                    />
-                    <span className="text-[10px] text-stone-400">kcal</span>
+                <div className="border-t border-stone-200/30 pt-3 space-y-3">
+                  <p className="text-[10px] uppercase tracking-widest text-stone-400 font-medium">Goals</p>
+                  <div className="space-y-1">
+                    <label className="text-[11px] text-stone-500 font-medium">Daily Goal</label>
+                    <div className="relative">
+                      <input
+                        type="number"
+                        value={editGoal}
+                        onChange={e => setEditGoal(e.target.value)}
+                        onFocus={() => setFocusedField('goal')}
+                        onBlur={() => setTimeout(() => setFocusedField(f => f === 'goal' ? null : f), 150)}
+                        onKeyDown={e => { if (e.key === 'Enter') { handleSaveSettings(); e.target.blur() } }}
+                        className="w-full bg-white/60 border border-stone-200/50 rounded-xl px-3 py-2 pr-16 text-sm text-stone-700 focus:outline-none focus:ring-1 focus:ring-stone-300 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                      />
+                      <div className="absolute right-1.5 top-1/2 -translate-y-1/2 flex items-center gap-1">
+                        {focusedField === 'goal' && (
+                          <button
+                            onMouseDown={e => { e.preventDefault(); handleSaveSettings() }}
+                            className="px-2 py-0.5 rounded-lg bg-stone-800 hover:bg-stone-900 text-white text-[10px] font-semibold transition shadow-sm"
+                          >
+                            Save
+                          </button>
+                        )}
+                        <span className="text-[10px] text-stone-400">kcal</span>
+                      </div>
+                    </div>
                   </div>
+                  <div className="space-y-1">
+                    <label className="text-[11px] text-stone-500 font-medium">Maintenance</label>
+                    <div className="relative">
+                      <input
+                        type="number"
+                        value={editMaint}
+                        onChange={e => setEditMaint(e.target.value)}
+                        onFocus={() => setFocusedField('maint')}
+                        onBlur={() => setTimeout(() => setFocusedField(f => f === 'maint' ? null : f), 150)}
+                        onKeyDown={e => { if (e.key === 'Enter') { handleSaveSettings(); e.target.blur() } }}
+                        className="w-full bg-white/60 border border-stone-200/50 rounded-xl px-3 py-2 pr-16 text-sm text-stone-700 focus:outline-none focus:ring-1 focus:ring-stone-300 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                      />
+                      <div className="absolute right-1.5 top-1/2 -translate-y-1/2 flex items-center gap-1">
+                        {focusedField === 'maint' && (
+                          <button
+                            onMouseDown={e => { e.preventDefault(); handleSaveSettings() }}
+                            className="px-2 py-0.5 rounded-lg bg-stone-800 hover:bg-stone-900 text-white text-[10px] font-semibold transition shadow-sm"
+                          >
+                            Save
+                          </button>
+                        )}
+                        <span className="text-[10px] text-stone-400">kcal</span>
+                      </div>
+                    </div>
+                  </div>
+                  <AnimatePresence>
+                    {savedMsg && (
+                      <motion.p
+                        initial={{ opacity: 0, y: -4 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0 }}
+                        className="text-[11px] text-stone-800 font-medium text-center"
+                      >
+                        ✓ Saved
+                      </motion.p>
+                    )}
+                  </AnimatePresence>
                 </div>
                 <button
                   onClick={onSignOut}
