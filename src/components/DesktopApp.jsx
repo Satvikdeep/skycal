@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { ChevronLeft, ChevronRight, Plus } from 'lucide-react'
 import { format, addMonths, subMonths, isSameDay, subDays, startOfMonth, endOfMonth, startOfWeek, endOfWeek, addDays, isSameMonth } from 'date-fns'
@@ -42,6 +42,7 @@ export default function DesktopApp({
   monthWeeks,
   yearMonths,
   dailyTotals,
+  saveSettings,
   onSignOut,
 }) {
   const goalLeft = CALORIE_LIMIT - totalCals
@@ -56,6 +57,11 @@ export default function DesktopApp({
   const [weekDir, setWeekDir] = useState(0)
   const [reflectMonth, setReflectMonth] = useState(new Date())
   const [monthDir, setMonthDir] = useState(0)
+  const [editGoal, setEditGoal] = useState(CALORIE_LIMIT)
+  const [editMaint, setEditMaint] = useState(MAINTENANCE_CALORIES)
+
+  useEffect(() => { setEditGoal(CALORIE_LIMIT) }, [CALORIE_LIMIT])
+  useEffect(() => { setEditMaint(MAINTENANCE_CALORIES) }, [MAINTENANCE_CALORIES])
 
   const goToPrevWeek = () => { setWeekDir(-1); setWeekOffset(p => p - 1) }
   const goToNextWeek = () => { if (weekOffset < 0) { setWeekDir(1); setWeekOffset(p => p + 1) } }
@@ -192,6 +198,31 @@ export default function DesktopApp({
                       <p className="text-xs text-stone-500 truncate">{user?.email}</p>
                     </div>
                   </div>
+                  <div className="border-t border-stone-200/40 pt-3 space-y-2">
+                    <p className="text-[10px] uppercase tracking-widest text-stone-400 font-medium">Goals</p>
+                    <div className="flex items-center gap-2">
+                      <label className="text-xs text-stone-500 w-24">Daily Goal</label>
+                      <input
+                        type="number"
+                        value={editGoal}
+                        onChange={e => setEditGoal(e.target.value)}
+                        onBlur={() => saveSettings(editGoal, editMaint)}
+                        className="flex-1 bg-white/50 border border-white/40 rounded-lg px-2.5 py-1.5 text-xs text-stone-700 focus:outline-none focus:ring-1 focus:ring-stone-300 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                      />
+                      <span className="text-[10px] text-stone-400">kcal</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <label className="text-xs text-stone-500 w-24">Maintenance</label>
+                      <input
+                        type="number"
+                        value={editMaint}
+                        onChange={e => setEditMaint(e.target.value)}
+                        onBlur={() => saveSettings(editGoal, editMaint)}
+                        className="flex-1 bg-white/50 border border-white/40 rounded-lg px-2.5 py-1.5 text-xs text-stone-700 focus:outline-none focus:ring-1 focus:ring-stone-300 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                      />
+                      <span className="text-[10px] text-stone-400">kcal</span>
+                    </div>
+                  </div>
                   <button
                     onClick={onSignOut}
                     className="w-full py-2.5 bg-white/70 hover:bg-red-50 text-stone-600 hover:text-red-500 rounded-xl text-sm font-medium transition border border-white/30"
@@ -206,20 +237,6 @@ export default function DesktopApp({
 
         {view === 'stats' ? (
                     <div className="space-y-10">
-                      <div className="flex items-end justify-between">
-                        <div>
-                          <p className="text-[11px] uppercase tracking-[0.28em] text-stone-500">Reflect</p>
-                          <h3 className="text-3xl font-serif italic text-stone-800">Week + Month</h3>
-                          <p className="mt-1 text-sm text-stone-600">{format(currentMonth, 'MMMM yyyy')}</p>
-                        </div>
-                        <div className="text-right text-xs text-stone-500">
-                          <p className="text-[11px] uppercase tracking-widest">Week Range</p>
-                          <p className="mt-1 text-sm text-stone-700">
-                            {format(weekStart, 'MMM d')} - {format(weekEnd, 'MMM d')}
-                          </p>
-                        </div>
-                      </div>
-
                       <div className="grid grid-cols-2 gap-6">
                         <div className="rounded-[28px] bg-white/35 border border-white/50 p-6">
                           <p className="text-[11px] uppercase tracking-widest text-stone-500">This Week</p>
@@ -312,12 +329,12 @@ export default function DesktopApp({
                             >
                               {(() => {
                                 const data = reflectWeekData.days
-                                const maxCal = Math.max(
-                                  ...data.map(x => x.calories),
-                                  MAINTENANCE_CALORIES + 300
-                                )
+                                const calsWithData = data.filter(x => x.calories > 0).map(x => x.calories)
+                                const maxCal = Math.max(...calsWithData, MAINTENANCE_CALORIES + 200)
+                                const minCal = Math.max(0, Math.min(...(calsWithData.length ? calsWithData : [0]), CALORIE_LIMIT) - 300)
+                                const range = maxCal - minCal
                                 const chartW = 660
-                                const chartH = 280
+                                const chartH = 240
                                 const padX = 40
                                 const padTop = 32
                                 const padBottom = 12
@@ -325,13 +342,14 @@ export default function DesktopApp({
                                 const totalH = chartH
                                 const stepX = (chartW - padX * 2) / 6
 
-                                const goalY = padTop + plotH - (CALORIE_LIMIT / maxCal) * plotH
-                                const maintY = padTop + plotH - (MAINTENANCE_CALORIES / maxCal) * plotH
+                                const calToY = (cal) => padTop + plotH - ((cal - minCal) / range) * plotH
+                                const goalY = calToY(CALORIE_LIMIT)
+                                const maintY = calToY(MAINTENANCE_CALORIES)
 
                                 const points = data.map((d, i) => ({
                                   x: padX + i * stepX,
                                   y: d.calories > 0
-                                    ? padTop + plotH - (d.calories / maxCal) * plotH
+                                    ? calToY(d.calories)
                                     : padTop + plotH,
                                   cal: d.calories,
                                   date: d.date,
@@ -351,7 +369,7 @@ export default function DesktopApp({
 
                                 return (
                                   <div>
-                                    <svg viewBox={`0 0 ${chartW} ${totalH + 2}`} className="w-full" style={{ height: '300px' }}>
+                                    <svg viewBox={`0 0 ${chartW} ${totalH + 2}`} className="w-full" style={{ height: '260px' }}>
                                       <defs>
                                         <linearGradient id="deskAreaGreen" x1="0" y1="0" x2="0" y2="1">
                                           <stop offset="0%" stopColor="#6dbd8a" stopOpacity="0.28" />
@@ -405,23 +423,14 @@ export default function DesktopApp({
                                                 stroke="white"
                                                 strokeWidth="2"
                                               />
-                                              <rect
-                                                x={p.x - 18}
-                                                y={p.y - 24}
-                                                width="36"
-                                                height="17"
-                                                rx="6"
-                                                fill="white"
-                                                fillOpacity="0.85"
-                                              />
                                               <text
                                                 x={p.x}
                                                 y={p.y - 12}
                                                 textAnchor="middle"
                                                 fontSize="11"
-                                                fill="#44403c"
+                                                fill="#8a8078"
                                                 fontFamily="sans-serif"
-                                                fontWeight="600"
+                                                fontWeight="500"
                                               >
                                                 {p.cal}
                                               </text>
@@ -615,7 +624,7 @@ export default function DesktopApp({
                       value={cals}
                       onChange={e => setCals(e.target.value)}
                       placeholder="0"
-                      className="w-12 bg-transparent text-right text-sm text-stone-700 focus:outline-none"
+                      className="w-12 bg-transparent text-right text-sm text-stone-700 focus:outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                     />
                     <span>k</span>
                     <div className="w-px h-4 bg-stone-200/70"></div>
@@ -624,7 +633,7 @@ export default function DesktopApp({
                       value={prot}
                       onChange={e => setProt(e.target.value)}
                       placeholder="0"
-                      className="w-8 bg-transparent text-right text-sm text-stone-700 focus:outline-none"
+                      className="w-8 bg-transparent text-right text-sm text-stone-700 focus:outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                     />
                     <span>p</span>
                   </div>

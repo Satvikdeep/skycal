@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from 'react'
 import { auth, googleProvider, db } from './firebase'
 import { signInWithPopup, signInWithRedirect, getRedirectResult, signOut, onAuthStateChanged } from 'firebase/auth'
-import { collection, addDoc, doc, deleteDoc, updateDoc, query, where, onSnapshot, serverTimestamp } from 'firebase/firestore'
+import { collection, addDoc, doc, deleteDoc, updateDoc, query, where, onSnapshot, serverTimestamp, getDoc, setDoc } from 'firebase/firestore'
 import { motion } from 'framer-motion'
 import { format, startOfMonth, endOfMonth, startOfWeek, endOfWeek, isSameMonth, isSameDay, addDays, subDays } from 'date-fns'
 import { SpeedInsights } from "@vercel/speed-insights/react"
@@ -31,8 +31,8 @@ export default function App() {
   const [isLoading, setIsLoading] = useState(true)
   const [isDesktop, setIsDesktop] = useState(false)
 
-  const CALORIE_LIMIT = 1800
-  const MAINTENANCE_CALORIES = 2400
+  const [CALORIE_LIMIT, setCalorieLimit] = useState(1800)
+  const [MAINTENANCE_CALORIES, setMaintenanceCalories] = useState(2400)
 
   // Single unified auth initialization - handles both redirect and state
   useEffect(() => {
@@ -79,7 +79,23 @@ export default function App() {
       clearLoading()
       
       if (currentUser) {
-        // Query only by uid to avoid needing a composite index
+        // Load user settings
+        const loadSettings = async () => {
+          try {
+            const settingsSnap = await getDoc(doc(db, "userSettings", currentUser.uid))
+            if (settingsSnap.exists()) {
+              const s = settingsSnap.data()
+              if (isMounted) {
+                setCalorieLimit(s.calorieLimit || 1800)
+                setMaintenanceCalories(s.maintenanceCalories || 2400)
+              }
+            }
+          } catch (e) {
+            console.error("Settings load error:", e)
+          }
+        }
+        loadSettings()
+
         const q = query(
           collection(db, "logs"),
           where("uid", "==", currentUser.uid)
@@ -223,7 +239,7 @@ export default function App() {
       totalDeficit: daysWithData > 0 ? (MAINTENANCE_CALORIES * daysWithData) - totalCals : 0,
       avgDeficit: daysWithData > 0 ? Math.round(((MAINTENANCE_CALORIES * daysWithData) - totalCals) / daysWithData) : 0,
     }
-  }, [dailyTotals])
+  }, [dailyTotals, MAINTENANCE_CALORIES])
 
   const monthStats = useMemo(() => {
     const monthStart = startOfMonth(currentMonth)
@@ -255,7 +271,7 @@ export default function App() {
       totalDeficit,
       avgDeficit: daysWithData > 0 ? Math.round(totalDeficit / daysWithData) : 0,
     }
-  }, [dailyTotals, currentMonth])
+  }, [dailyTotals, currentMonth, MAINTENANCE_CALORIES])
 
   const monthWeeks = useMemo(() => {
     const monthStart = startOfMonth(currentMonth)
@@ -296,7 +312,7 @@ export default function App() {
     }
 
     return weeks
-  }, [dailyTotals, currentMonth])
+  }, [dailyTotals, currentMonth, MAINTENANCE_CALORIES])
 
   const yearMonths = useMemo(() => {
     const year = currentMonth.getFullYear()
@@ -328,7 +344,7 @@ export default function App() {
       })
     }
     return months
-  }, [dailyTotals, currentMonth])
+  }, [dailyTotals, currentMonth, MAINTENANCE_CALORIES])
 
   const renderCalendar = () => {
     const monthStart = startOfMonth(currentMonth)
@@ -377,6 +393,22 @@ export default function App() {
 
   const onSignOut = () => signOut(auth)
 
+  const saveSettings = async (newLimit, newMaint) => {
+    if (!user) return
+    const limit = Math.max(500, Math.min(10000, Number(newLimit) || 1800))
+    const maint = Math.max(500, Math.min(10000, Number(newMaint) || 2400))
+    setCalorieLimit(limit)
+    setMaintenanceCalories(maint)
+    try {
+      await setDoc(doc(db, "userSettings", user.uid), {
+        calorieLimit: limit,
+        maintenanceCalories: maint,
+      }, { merge: true })
+    } catch (e) {
+      console.error("Settings save error:", e)
+    }
+  }
+
   const appProps = {
     user,
     showProfile,
@@ -417,6 +449,7 @@ export default function App() {
     monthWeeks,
     yearMonths,
     dailyTotals,
+    saveSettings,
     onSignOut,
   }
 

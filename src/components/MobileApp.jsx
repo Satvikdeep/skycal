@@ -1,3 +1,4 @@
+import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { ChevronLeft, ChevronRight, Plus, LogOut } from 'lucide-react'
 import { format, addMonths, subMonths } from 'date-fns'
@@ -36,10 +37,14 @@ export default function MobileApp({
   cancelEdit,
   totalCals,
   CALORIE_LIMIT,
+  MAINTENANCE_CALORIES,
   renderCalendar,
   weeklyStats,
+  saveSettings,
   onSignOut,
 }) {
+  const [editGoal, setEditGoal] = useState(CALORIE_LIMIT)
+  useEffect(() => { setEditGoal(CALORIE_LIMIT) }, [CALORIE_LIMIT])
   return (
     <>
       <motion.div
@@ -84,6 +89,19 @@ export default function MobileApp({
                       {user?.displayName || 'User'}
                     </p>
                     <p className="text-xs text-stone-500 truncate">{user?.email}</p>
+                  </div>
+                </div>
+                <div className="border-t border-stone-200/30 pt-3">
+                  <div className="flex items-center gap-2">
+                    <label className="text-xs text-stone-500 flex-shrink-0">Daily Goal</label>
+                    <input
+                      type="number"
+                      value={editGoal}
+                      onChange={e => setEditGoal(e.target.value)}
+                      onBlur={() => saveSettings(editGoal, MAINTENANCE_CALORIES)}
+                      className="flex-1 bg-white/40 border border-white/30 rounded-lg px-2.5 py-1.5 text-xs text-stone-700 focus:outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                    />
+                    <span className="text-[10px] text-stone-400">kcal</span>
                   </div>
                 </div>
                 <button
