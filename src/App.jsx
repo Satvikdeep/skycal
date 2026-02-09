@@ -225,6 +225,111 @@ export default function App() {
     }
   }, [dailyTotals])
 
+  const monthStats = useMemo(() => {
+    const monthStart = startOfMonth(currentMonth)
+    const monthEnd = endOfMonth(monthStart)
+    const days = []
+    let totalCals = 0
+    let totalProt = 0
+    let daysWithData = 0
+    let day = monthStart
+
+    while (day <= monthEnd) {
+      const ds = format(day, 'yyyy-MM-dd')
+      const data = dailyTotals[ds] || { calories: 0, protein: 0 }
+      days.push({ date: day, dateString: ds, ...data })
+      totalCals += data.calories
+      totalProt += data.protein
+      if (data.calories > 0) daysWithData++
+      day = addDays(day, 1)
+    }
+
+    const totalDeficit = daysWithData > 0 ? (MAINTENANCE_CALORIES * daysWithData) - totalCals : 0
+    return {
+      days,
+      totalCalories: totalCals,
+      totalProtein: totalProt,
+      avgCalories: daysWithData > 0 ? Math.round(totalCals / daysWithData) : 0,
+      avgProtein: daysWithData > 0 ? Math.round(totalProt / daysWithData) : 0,
+      daysWithData,
+      totalDeficit,
+      avgDeficit: daysWithData > 0 ? Math.round(totalDeficit / daysWithData) : 0,
+    }
+  }, [dailyTotals, currentMonth])
+
+  const monthWeeks = useMemo(() => {
+    const monthStart = startOfMonth(currentMonth)
+    const monthEnd = endOfMonth(monthStart)
+    const rangeStart = startOfWeek(monthStart)
+    const rangeEnd = endOfWeek(monthEnd)
+    const weeks = []
+    let weekStart = rangeStart
+    let index = 1
+
+    while (weekStart <= rangeEnd) {
+      let totalCals = 0
+      let totalProt = 0
+      let daysWithData = 0
+      for (let i = 0; i < 7; i++) {
+        const d = addDays(weekStart, i)
+        if (d < monthStart || d > monthEnd) continue
+        const ds = format(d, 'yyyy-MM-dd')
+        const data = dailyTotals[ds] || { calories: 0, protein: 0 }
+        totalCals += data.calories
+        totalProt += data.protein
+        if (data.calories > 0) daysWithData++
+      }
+      if (weekStart <= monthEnd && addDays(weekStart, 6) >= monthStart) {
+        const totalDeficit = daysWithData > 0 ? (MAINTENANCE_CALORIES * daysWithData) - totalCals : 0
+        weeks.push({
+          label: `W${index}`,
+          start: weekStart,
+          totalCalories: totalCals,
+          totalProtein: totalProt,
+          daysWithData,
+          totalDeficit,
+          avgDeficit: daysWithData > 0 ? Math.round(totalDeficit / daysWithData) : 0,
+        })
+        index++
+      }
+      weekStart = addDays(weekStart, 7)
+    }
+
+    return weeks
+  }, [dailyTotals, currentMonth])
+
+  const yearMonths = useMemo(() => {
+    const year = currentMonth.getFullYear()
+    const months = []
+    for (let m = 0; m < 12; m++) {
+      const monthStart = startOfMonth(new Date(year, m, 1))
+      const monthEnd = endOfMonth(monthStart)
+      let totalCals = 0
+      let totalProt = 0
+      let daysWithData = 0
+      let day = monthStart
+      while (day <= monthEnd) {
+        const ds = format(day, 'yyyy-MM-dd')
+        const data = dailyTotals[ds] || { calories: 0, protein: 0 }
+        totalCals += data.calories
+        totalProt += data.protein
+        if (data.calories > 0) daysWithData++
+        day = addDays(day, 1)
+      }
+      const totalDeficit = daysWithData > 0 ? (MAINTENANCE_CALORIES * daysWithData) - totalCals : 0
+      months.push({
+        month: new Date(year, m, 1),
+        totalCalories: totalCals,
+        totalProtein: totalProt,
+        daysWithData,
+        totalDeficit,
+        avgDeficit: daysWithData > 0 ? Math.round(totalDeficit / daysWithData) : 0,
+        avgProtein: daysWithData > 0 ? Math.round(totalProt / daysWithData) : 0,
+      })
+    }
+    return months
+  }, [dailyTotals, currentMonth])
+
   const renderCalendar = () => {
     const monthStart = startOfMonth(currentMonth)
     const monthEnd = endOfMonth(monthStart)
@@ -305,8 +410,13 @@ export default function App() {
     cancelEdit,
     totalCals,
     CALORIE_LIMIT,
+    MAINTENANCE_CALORIES,
     renderCalendar,
     weeklyStats,
+    monthStats,
+    monthWeeks,
+    yearMonths,
+    dailyTotals,
     onSignOut,
   }
 
