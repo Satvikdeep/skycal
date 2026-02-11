@@ -3,6 +3,57 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { ChevronLeft, ChevronRight, Plus, Github, Globe } from 'lucide-react'
 import { format, addMonths, subMonths, isSameDay, subDays, startOfMonth, endOfMonth, startOfWeek, endOfWeek, addDays, isSameMonth } from 'date-fns'
 import SwipeableEntry from './SwipeableEntry'
+import ScrollIndicator from './ScrollIndicator'
+
+function StatsCard({ title, value, unit, hoverTitle, hoverValue, hoverUnit, isDeficit }) {
+  const [isHovered, setIsHovered] = useState(false)
+  
+  const isProtein = title.includes('Protein')
+  
+  // Value formatting
+  const currentValRaw = isHovered ? hoverValue : value
+  const currentValAbs = Math.abs(currentValRaw).toLocaleString()
+  const showPlus = !isHovered && isDeficit && currentValRaw < 0
+  
+  // Title / Unit
+  const currentTitle = isHovered ? hoverTitle : title
+  const currentUnit = isHovered ? hoverUnit : unit
+  
+  const textColor = !isHovered && isDeficit
+    ? (value >= 0 ? 'text-emerald-600' : 'text-red-500')
+    : 'text-stone-800'
+
+  return (
+    <div 
+      className="rounded-2xl bg-white/45 border border-white/50 p-4 transition-all duration-300 hover:bg-white/60 cursor-default select-none relative overflow-hidden group"
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
+    >
+      <div className="relative z-10">
+        <p className="text-[9px] uppercase tracking-widest text-stone-500 mb-2 h-3 block transition-colors duration-300">
+          {currentTitle}
+        </p>
+        <div className="h-7 w-full relative mb-1">
+           <AnimatePresence mode="wait" initial={false}>
+             <motion.p
+               key={isHovered ? 'hover' : 'normal'}
+               initial={{ opacity: 0, y: 5, filter: 'blur(2px)' }}
+               animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
+               exit={{ opacity: 0, y: -5, filter: 'blur(2px)' }}
+               transition={{ duration: 0.2, ease: "easeOut" }}
+               className={`text-xl font-light font-serif leading-none absolute inset-0 ${textColor}`}
+             >
+               {showPlus ? '+' : ''}{currentValAbs}{isProtein ? 'g' : ''}
+             </motion.p>
+           </AnimatePresence>
+        </div>
+        <p className="text-[10px] text-stone-500">
+           {currentUnit}
+        </p>
+      </div>
+    </div>
+  )
+}
 
 export default function DesktopApp({
   user,
@@ -71,6 +122,7 @@ export default function DesktopApp({
   const [savedMsg, setSavedMsg] = useState(false)
   const [focusedField, setFocusedField] = useState(null)
   const [showFooter, setShowFooter] = useState(false)
+  const [showIndepth, setShowIndepth] = useState(false)
 
   useEffect(() => { setEditGoal(CALORIE_LIMIT) }, [CALORIE_LIMIT])
   useEffect(() => { setEditMaint(MAINTENANCE_CALORIES) }, [MAINTENANCE_CALORIES])
@@ -304,54 +356,66 @@ export default function DesktopApp({
                         <div className="rounded-[28px] bg-white/35 border border-white/50 p-6">
                           <p className="text-[11px] uppercase tracking-widest text-stone-500">This Week</p>
                           <div className="mt-4 grid grid-cols-3 gap-3">
-                            <div className="rounded-2xl bg-white/45 border border-white/50 p-4">
-                              <p className="text-[9px] uppercase tracking-widest text-stone-500">Avg Deficit</p>
-                              <p className={`text-xl font-light font-serif ${weeklyStats.avgDeficit >= 0 ? 'text-emerald-600' : 'text-red-500'}`}>
-                                {weeklyStats.avgDeficit >= 0 ? '' : '+'}{Math.abs(weeklyStats.avgDeficit).toLocaleString()}
-                              </p>
-                              <p className="text-[10px] text-stone-500">kcal / day</p>
-                            </div>
-                            <div className="rounded-2xl bg-white/45 border border-white/50 p-4">
-                              <p className="text-[9px] uppercase tracking-widest text-stone-500">Total Deficit</p>
-                              <p className={`text-xl font-light font-serif ${weeklyStats.totalDeficit >= 0 ? 'text-emerald-600' : 'text-red-500'}`}>
-                                {weeklyStats.totalDeficit >= 0 ? '' : '+'}{Math.abs(weeklyStats.totalDeficit).toLocaleString()}
-                              </p>
-                              <p className="text-[10px] text-stone-500">kcal</p>
-                            </div>
-                            <div className="rounded-2xl bg-white/45 border border-white/50 p-4">
-                              <p className="text-[9px] uppercase tracking-widest text-stone-500">Avg Protein</p>
-                              <p className="text-xl font-light text-stone-800 font-serif">
-                                {weeklyStats.avgProtein.toLocaleString()}g
-                              </p>
-                              <p className="text-[10px] text-stone-500">per day</p>
-                            </div>
+                            <StatsCard
+                              title="Avg Deficit"
+                              value={weeklyStats.avgDeficit}
+                              unit="kcal / day"
+                              hoverTitle="Avg Intake"
+                              hoverValue={weeklyStats.avgCalories}
+                              hoverUnit="kcal / day"
+                              isDeficit={true}
+                            />
+                            <StatsCard
+                              title="Total Deficit"
+                              value={weeklyStats.totalDeficit}
+                              unit="kcal"
+                              hoverTitle="Total Intake"
+                              hoverValue={weeklyStats.totalCalories}
+                              hoverUnit="kcal"
+                              isDeficit={true}
+                            />
+                            <StatsCard
+                              title="Avg Protein"
+                              value={weeklyStats.avgProtein}
+                              unit="per day"
+                              hoverTitle="Total Protein"
+                              hoverValue={weeklyStats.totalProtein}
+                              hoverUnit="total"
+                              isDeficit={false}
+                            />
                           </div>
                         </div>
 
                         <div className="rounded-[28px] bg-white/35 border border-white/50 p-6">
                           <p className="text-[11px] uppercase tracking-widest text-stone-500">This Month</p>
                           <div className="mt-4 grid grid-cols-3 gap-3">
-                            <div className="rounded-2xl bg-white/45 border border-white/50 p-4">
-                              <p className="text-[9px] uppercase tracking-widest text-stone-500">Avg Deficit</p>
-                              <p className={`text-xl font-light font-serif ${monthStats.avgDeficit >= 0 ? 'text-emerald-600' : 'text-red-500'}`}>
-                                {monthStats.avgDeficit >= 0 ? '' : '+'}{Math.abs(monthStats.avgDeficit).toLocaleString()}
-                              </p>
-                              <p className="text-[10px] text-stone-500">kcal / day</p>
-                            </div>
-                            <div className="rounded-2xl bg-white/45 border border-white/50 p-4">
-                              <p className="text-[9px] uppercase tracking-widest text-stone-500">Total Deficit</p>
-                              <p className={`text-xl font-light font-serif ${monthStats.totalDeficit >= 0 ? 'text-emerald-600' : 'text-red-500'}`}>
-                                {monthStats.totalDeficit >= 0 ? '' : '+'}{Math.abs(monthStats.totalDeficit).toLocaleString()}
-                              </p>
-                              <p className="text-[10px] text-stone-500">kcal</p>
-                            </div>
-                            <div className="rounded-2xl bg-white/45 border border-white/50 p-4">
-                              <p className="text-[9px] uppercase tracking-widest text-stone-500">Avg Protein</p>
-                              <p className="text-xl font-light text-stone-800 font-serif">
-                                {monthStats.avgProtein.toLocaleString()}g
-                              </p>
-                              <p className="text-[10px] text-stone-500">per day</p>
-                            </div>
+                            <StatsCard
+                              title="Avg Deficit"
+                              value={monthStats.avgDeficit}
+                              unit="kcal / day"
+                              hoverTitle="Avg Intake"
+                              hoverValue={monthStats.avgCalories}
+                              hoverUnit="kcal / day"
+                              isDeficit={true}
+                            />
+                            <StatsCard
+                              title="Total Deficit"
+                              value={monthStats.totalDeficit}
+                              unit="kcal"
+                              hoverTitle="Total Intake"
+                              hoverValue={monthStats.totalCalories}
+                              hoverUnit="kcal"
+                              isDeficit={true}
+                            />
+                            <StatsCard
+                              title="Avg Protein"
+                              value={monthStats.avgProtein}
+                              unit="per day"
+                              hoverTitle="Total Protein"
+                              hoverValue={monthStats.totalProtein}
+                              hoverUnit="total"
+                              isDeficit={false}
+                            />
                           </div>
                         </div>
                       </div>
@@ -528,6 +592,7 @@ export default function DesktopApp({
                           </div>
                         </div>
 
+                        <div className="space-y-4">
                         {/* Monthly Calendar with Deficits */}
                         <div className="rounded-[28px] bg-white/50 backdrop-blur-md border border-white/60 p-5 shadow-sm">
                           <div className="flex items-center justify-between mb-4">
@@ -604,7 +669,45 @@ export default function DesktopApp({
                             </motion.div>
                           </AnimatePresence>
                         </div>
+
+                        <button
+                          onClick={() => setShowIndepth(!showIndepth)}
+                          className="w-full py-2 rounded-2xl bg-white/40 border border-white/50 text-stone-600 text-xs font-medium hover:bg-white/60 hover:text-stone-800 transition shadow-sm uppercase tracking-wider relative overflow-hidden group"
+                        >
+                          <span className="relative z-10 group-hover:text-stone-900 transition-colors">
+                            {showIndepth ? 'Hide Analysis' : 'Look into indepth analysis'}
+                          </span>
+                          <motion.span 
+                            className="absolute inset-0 bg-white/40 opacity-0 group-hover:opacity-100 transition-opacity"
+                            layoutId="hover-bg"
+                          />
+                        </button>
+                        </div>
                       </div>
+
+                      <AnimatePresence>
+                         {showIndepth && (
+                            <motion.div
+                                initial={{ opacity: 0, height: 0, scale: 0.98, filter: 'blur(10px)' }}
+                                animate={{ opacity: 1, height: 'auto', scale: 1, filter: 'blur(0px)' }}
+                                exit={{ opacity: 0, height: 0, scale: 0.98, filter: 'blur(10px)' }}
+                                transition={{ type: "spring", bounce: 0, duration: 0.5 }}
+                                className="overflow-hidden"
+                            >
+                                <div className="rounded-[28px] bg-white/35 border border-white/50 p-8 min-h-[400px] flex flex-col items-center justify-center text-stone-400 gap-4 mt-8">
+                                    <div className="p-4 rounded-full bg-white/40 shadow-sm text-stone-400">
+                                      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="20" x2="12" y2="10"></line><line x1="18" y1="20" x2="18" y2="4"></line><line x1="6" y1="20" x2="6" y2="16"></line></svg>
+                                    </div>
+                                    <div className="text-center space-y-1">
+                                      <p className="text-sm font-medium text-stone-600">Advanced Analytics</p>
+                                      <p className="text-xs text-stone-400/80 max-w-[200px] mx-auto leading-relaxed">
+                                        Deeper insights into your nutrition patterns will appear here in the next update.
+                                      </p>
+                                    </div>
+                                </div>
+                            </motion.div>
+                         )}
+                      </AnimatePresence>
                     </div>
                   ) : (
                 <div className="grid grid-cols-[320px_minmax(0,1fr)_280px] gap-14">
@@ -801,6 +904,8 @@ export default function DesktopApp({
           </motion.div>
         )}
       </AnimatePresence>
+
+      <ScrollIndicator watch={[view, showIndepth, logsForSelectedDate, showProfile, showFooter, selectedDate, currentMonth]} />
     </div>
   )
 }

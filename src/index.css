@@ -7,6 +7,10 @@
 .scrollbar-hide::-webkit-scrollbar { display: none; }
 .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
 
+/* Hide scrollbar globally */
+html::-webkit-scrollbar, body::-webkit-scrollbar, #root::-webkit-scrollbar { display: none; }
+html, body, #root { -ms-overflow-style: none; scrollbar-width: none; }
+
 html, body, #root {
   margin: 0;
   padding: 0;
