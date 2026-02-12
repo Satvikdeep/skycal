@@ -95,6 +95,7 @@ export default function DesktopApp({
   dailyTotals,
   saveSettings,
   onSignOut,
+  isV2
 }) {
   const goalLeft = CALORIE_LIMIT - totalCals
   const isToday = isSameDay(selectedDate, new Date())
@@ -196,6 +197,7 @@ export default function DesktopApp({
             <img src="/skycal-logo.png" alt="SkyCal" className="h-[46px] w-auto object-contain" />
             <div>
               <p className="text-2xl font-serif italic text-stone-800 tracking-tight">SkyCal</p>
+              {isV2 && <p className="text-[9px] uppercase tracking-widest text-emerald-600 font-bold ml-0.5 -mt-0.5">V2 Beta</p>}
             </div>
           </motion.div>
 

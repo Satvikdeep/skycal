@@ -8,9 +8,11 @@ import { SpeedInsights } from "@vercel/speed-insights/react"
 import { Analytics } from "@vercel/analytics/react"
 import DesktopApp from './components/DesktopApp'
 import MobileApp from './components/MobileApp'
+import { useFeatureFlags } from './hooks/useFeatureFlags'
 
 
 export default function App() {
+  const { isV2, toggleVersion } = useFeatureFlags()
   const [user, setUser] = useState(null)
   const [entries, setEntries] = useState([])
   const [currentMonth, setCurrentMonth] = useState(new Date()) 
@@ -451,10 +453,18 @@ export default function App() {
     dailyTotals,
     saveSettings,
     onSignOut,
+    isV2, // Pass version flag to children
   }
 
   return (
-    <div className="min-h-dvh w-full">
+    <div className="min-h-dvh w-full relative">
+      {/* Hidden Version Toggle (Bottom Right Corner) */}
+      <div 
+        className="fixed bottom-1 right-1 w-4 h-4 z-[9999] opacity-0 hover:opacity-100 cursor-pointer bg-red-500/20"
+        onClick={toggleVersion}
+        title={`Current: ${isV2 ? 'V2' : 'V1'} (Click to switch)`}
+      />
+      
       <SpeedInsights />
       <Analytics />
       {isLoading ? (
